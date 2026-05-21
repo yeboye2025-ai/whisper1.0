@@ -644,6 +644,7 @@ export default function App() {
   const [clientKey, setClientKey] = useState<string>(() => localStorage.getItem("pet_whisper_custom_key") || "");
   const [clientBaseUrl, setClientBaseUrl] = useState<string>(() => localStorage.getItem("pet_whisper_custom_url") || "");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'analyzer' | 'archives'>('analyzer');
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -813,17 +814,48 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-orange-500/30">
       {/* Navigation */}
-      <nav className="border-b border-white/10 px-6 py-4 flex justify-between items-center bg-black/50 backdrop-blur-md sticky top-0 z-50">
+      <nav className="border-b border-white/10 px-6 py-4 flex flex-col sm:flex-row gap-4 justify-between items-center bg-black/50 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center shadow-lg shadow-orange-500/20">
             <Dog className="text-white w-5 h-5" />
           </div>
           <span className="font-mono text-sm tracking-[0.2em] font-bold uppercase">Pet Whisper <span className="text-orange-500">AI</span></span>
         </div>
+
+        {/* Tab switcher navigation */}
+        <div className="flex items-center gap-1.5 bg-white/[0.02] border border-white/10 rounded-xl p-1 shrink-0">
+          <button
+            onClick={() => setActiveTab('analyzer')}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-[10px] text-[10px] font-mono uppercase tracking-wider transition-all duration-300
+              ${activeTab === 'analyzer' 
+                ? 'bg-orange-500 text-black font-semibold shadow-lg shadow-orange-500/10' 
+                : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+          >
+            <BrainCircuit className="w-3.5 h-3.5 animate-pulse" />
+            <span>Analyzer</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('archives')}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-[10px] text-[10px] font-mono uppercase tracking-wider transition-all duration-300 relative
+              ${activeTab === 'archives' 
+                ? 'bg-orange-500 text-black font-semibold shadow-lg shadow-orange-500/10' 
+                : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+          >
+            <History className="w-3.5 h-3.5" />
+            <span>Archives</span>
+            {history.length > 0 && (
+              <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded font-mono ml-1.5 transition-colors
+                ${activeTab === 'archives' ? 'bg-black/15 text-black' : 'bg-orange-500/20 text-orange-400 border border-orange-500/10'}`}
+              >
+                {history.length}
+              </span>
+            )}
+          </button>
+        </div>
+
         <div className="flex items-center gap-6">
-          <div className="hidden md:flex gap-6 text-[10px] font-mono uppercase tracking-widest text-white/40">
+          <div className="hidden lg:flex gap-6 text-[10px] font-mono uppercase tracking-widest text-white/40">
             <span className="hover:text-white cursor-pointer transition-colors">Behavior Model v1.0</span>
-            <span className="hover:text-white cursor-pointer transition-colors">Ethology Database</span>
           </div>
           <button 
             onClick={() => setIsSettingsOpen(true)}
@@ -836,7 +868,16 @@ export default function App() {
         </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto px-6 py-12 md:py-20 grid md:grid-cols-[1.2fr_1fr] gap-12 items-start">
+      <AnimatePresence mode="wait">
+        {activeTab === 'analyzer' ? (
+          <motion.main 
+            key="analyzer-view"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.2 }}
+            className="max-w-6xl mx-auto px-6 py-12 md:py-20 grid md:grid-cols-[1.2fr_1fr] gap-12 items-start"
+          >
         {/* Left Side: Upload & Media View */}
         <section className="space-y-8">
           <header className="space-y-4">
@@ -1051,10 +1092,16 @@ export default function App() {
             )}
           </AnimatePresence>
         </section>
-      </main>
-
-      {/* History Log Section */}
-      <section className="max-w-6xl mx-auto px-6 pb-20 border-t border-white/5 pt-20">
+          </motion.main>
+        ) : (
+          <motion.section 
+            key="archives-view"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.2 }}
+            className="max-w-6xl mx-auto px-6 py-12 md:py-20 space-y-12 min-h-[65vh]"
+          >
         <div className="flex items-center justify-between mb-12">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-[10px] font-mono text-orange-500 uppercase tracking-[0.2em]">
@@ -1154,7 +1201,9 @@ export default function App() {
             )}
           </AnimatePresence>
         </div>
-      </section>
+          </motion.section>
+        )}
+      </AnimatePresence>
 
       {/* Detailed View Modal */}
       <AnimatePresence>
@@ -1243,6 +1292,7 @@ export default function App() {
                         setMedia(selectedHistoryEntry.thumbnail);
                         setMimeType(selectedHistoryEntry.mimeType);
                         setSelectedHistoryEntry(null);
+                        setActiveTab('analyzer');
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
                       className="flex-1 py-4 bg-orange-500 text-black font-mono text-[10px] uppercase tracking-widest rounded-xl hover:bg-orange-400 transition-colors font-bold"
@@ -1306,35 +1356,35 @@ export default function App() {
 
                 {/* Form Group: Custom Base URL */}
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-mono uppercase tracking-widest text-white/40 font-bold animate-pulse">
+                  <label className="block text-[10px] font-mono uppercase tracking-widest text-white/40 font-bold">
                     API Base URL (Proxy Gateway)
                   </label>
                   <input 
                     type="text"
                     value={clientBaseUrl}
                     onChange={(e) => setClientBaseUrl(e.target.value)}
-                    placeholder="https://watt-api.rivtower.cc/v1"
+                    placeholder="https://generativelanguage.googleapis.com (Optional)"
                     className="w-full bg-white/[0.02] border border-white/10 hover:border-white/20 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-mono text-white/80 transition-all outline-none"
                   />
                   <p className="text-[10px] text-white/30 leading-normal">
-                    Defaults to <code className="bg-white/10 px-1 py-0.5 rounded text-orange-400">https://watt-api.rivtower.cc/v1</code>.
+                    Leave blank to use official Google Gemini API direct endpoints.
                   </p>
                 </div>
 
                 {/* Form Group: Custom API Key */}
                 <div className="space-y-2">
                   <label className="block text-[10px] font-mono uppercase tracking-widest text-white/40 font-bold">
-                    API Credentials (svc Key / Google key)
+                    API Credentials (Google API key)
                   </label>
                   <input 
                     type="password"
                     value={clientKey}
                     onChange={(e) => setClientKey(e.target.value)}
-                    placeholder="svc-5b63ab3c005f4c4eb4d7be8136fd074b"
+                    placeholder="AIzaSy..."
                     className="w-full bg-white/[0.02] border border-white/10 hover:border-white/20 focus:border-orange-500 rounded-xl px-4 py-3 text-xs font-mono text-white/80 transition-all outline-none"
                   />
                   <p className="text-[10px] text-white/30 leading-normal">
-                    Insert your custom proxy <code className="text-orange-400">svc-</code> key or official Google Gemini API key.
+                    Enter your custom Google Gemini API key here to override backend secrets.
                   </p>
                 </div>
 

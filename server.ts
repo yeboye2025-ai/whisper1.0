@@ -63,31 +63,20 @@ Your job is to analyze dog images or short videos and produce:
 - No human-like psychological diagnosis
 `;
 
-// Initialize custom proxy and official Gemini API clients with safe credentials
-const customKey = (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.startsWith("svc-"))
-  ? process.env.GEMINI_API_KEY
-  : "svc-5b63ab3c005f4c4eb4d7be8136fd074b";
-
-const customBaseUrl = process.env.GEMINI_API_BASE_URL || "https://watt-api.rivtower.cc/v1";
-
-const aiCustom = new GoogleGenAI({
-  apiKey: customKey,
+// Initialize official standard Gemini API client with credentials injected by the platform
+const officialKey = process.env.GEMINI_API_KEY || "";
+const aiOfficial = new GoogleGenAI({
+  apiKey: officialKey,
   httpOptions: {
-    baseUrl: customBaseUrl,
     headers: {
       "User-Agent": "aistudio-build",
     },
-    timeout: 45000, // 45s generous timeout to handle model generation latency over custom proxy
   },
 });
 
-const officialKey = (process.env.GEMINI_API_KEY && !process.env.GEMINI_API_KEY.startsWith("svc-"))
-  ? process.env.GEMINI_API_KEY
-  : "";
-
-const aiOfficial = new GoogleGenAI({
-  apiKey: officialKey,
-});
+// Optional proxy defaults (only used if environment variables are explicitly configured)
+const customKey = process.env.GEMINI_API_KEY_PROXY || "";
+const customBaseUrl = process.env.GEMINI_API_BASE_URL_PROXY || "";
 
 app.post("/api/analyze", async (req, res) => {
   try {
@@ -103,44 +92,61 @@ app.post("/api/analyze", async (req, res) => {
     // Proactively check if activeBaseUrl resolves to a private, non-routable IP (e.g. 192.168.x.x)
     let isPrivateHost = false;
     let dnsIp = "";
-    try {
-      const urlObj = new URL(activeBaseUrl);
-      const host = urlObj.hostname;
-      const lookupResult = await dns.lookup(host);
-      dnsIp = lookupResult.address;
-      if (isPrivateIp(dnsIp)) {
-        isPrivateHost = true;
+    if (activeBaseUrl) {
+      try {
+        const urlObj = new URL(activeBaseUrl);
+        const host = urlObj.hostname;
+        const lookupResult = await dns.lookup(host);
+        dnsIp = lookupResult.address;
+        if (isPrivateIp(dnsIp)) {
+          isPrivateHost = true;
+        }
+      } catch (e: any) {
+        console.warn("Pre-DNS lookup diagnostic logged (cannot resolve host, could be private/local only):", e.message || e);
       }
-    } catch (e: any) {
-      console.warn("Pre-DNS lookup diagnostic logged (cannot resolve host, could be private/local only):", e.message || e);
     }
 
-    if (isPrivateHost) {
-      console.log(`Note: Active API host resolves to a private IP/intranet address (${dnsIp}) for ${activeBaseUrl}. Attempting server-side query with shortened timeout (it might be routed through their VPC/intranet)...`);
+    if (isPrivateHost && activeBaseUrl && activeKey) {
+      console.log(`Note: Intercepted private host resolution (${dnsIp}) for ${activeBaseUrl}. Relaying configuration metadata to client for instant browser-direct execution.`);
+      return res.json({
+        clientFallback: true,
+        customBaseUrl: activeBaseUrl,
+        customKey: activeKey,
+        isPrivateIp: true,
+        dnsIp,
+        systemInstruction: SYSTEM_INSTRUCTION,
+        message: `Your backend API host resolves to a private intranet address (${dnsIp}) that our Cloud environment cannot access. We are securely routing this request directly from your browser!`,
+      });
     }
 
-    const serverTimeout = isPrivateHost ? 10000 : 45000; // 10s timeout for private network, 45s for standard external
+    const serverTimeout = 45000; // 45s for standard external proxy gateway
 
-    // Dynamic custom client using active credentials (allows client to configure their proxy/keys on-the-fly)
-    const dynamicCustomClient = new GoogleGenAI({
-      apiKey: activeKey,
-      httpOptions: {
-        baseUrl: activeBaseUrl,
-        headers: {
-          "User-Agent": "aistudio-build",
+    // Prepare fallback chain dynamically. If custom settings are provided, they take precedence.
+    const fallbackChain = [];
+
+    if (activeBaseUrl && activeKey) {
+      const dynamicCustomClient = new GoogleGenAI({
+        apiKey: activeKey,
+        httpOptions: {
+          baseUrl: activeBaseUrl,
+          headers: {
+            "User-Agent": "aistudio-build",
+          },
+          timeout: serverTimeout,
         },
-        timeout: serverTimeout,
-      },
-    });
+      });
 
-    // Comprehensive fallback chain: starting with Custom Proxy (with various models), falling back to standard official Gemini
-    const fallbackChain = [
-      { client: dynamicCustomClient, model: "gemini-3.5-flash", name: "Custom Proxy (gemini-3.5-flash)" },
-      { client: dynamicCustomClient, model: "gemini-2.5-flash", name: "Custom Proxy (gemini-2.5-flash)" },
-      { client: dynamicCustomClient, model: "gemini-1.5-flash", name: "Custom Proxy (gemini-1.5-flash)" },
-      { client: aiOfficial, model: "gemini-2.5-flash", name: "Official Gemini API (gemini-2.5-flash)" },
-      { client: aiOfficial, model: "gemini-1.5-flash", name: "Official Gemini API (gemini-1.5-flash)" },
-    ];
+      fallbackChain.push(
+        { client: dynamicCustomClient, model: "gemini-3.5-flash", name: "Custom Proxy (gemini-3.5-flash)" },
+        { client: dynamicCustomClient, model: "gemini-2.5-flash", name: "Custom Proxy (gemini-2.5-flash)" }
+      );
+    }
+
+    // Always include direct Official Google Gemini API as primary default or direct fallback
+    fallbackChain.push(
+      { client: aiOfficial, model: "gemini-3.5-flash", name: "Official Gemini API (gemini-3.5-flash)" },
+      { client: aiOfficial, model: "gemini-2.5-flash", name: "Official Gemini API (gemini-2.5-flash)" }
+    );
 
     let lastError: any = null;
     let responseText = "";
