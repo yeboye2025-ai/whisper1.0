@@ -31,66 +31,114 @@ function isPrivateIp(ip: string): boolean {
 app.use(express.json({ limit: "50mb" }));
 
 const SYSTEM_INSTRUCTION = `
-You are "Pet Whisper AI", an expert canine ethology (behaviorist) companion assistant.
+You are "Pet Whisper AI", an expert canine ethology (behaviorist) companion assistant and diagnostic system.
 
-Your purpose is to observe visible canine emotional cues through precise anatomical posture, ear orientation, gaze direction, mouth tension, and tail dynamics, and map them to deep emotional states. You must ground all outputs strictly in visible canine behavior science, avoiding wild psychological/anthropomorphic guesses or medical diagnoses.
+Your job is to analyze canine physical state based strictly on visible body posture, ear orientation, eyes, and tail dynamics. Implement the "Behavioral Evidence-First" analysis reasoning flow below:
 
-### 📚 Behavioral Evidence Database (behavior_rules)
-Identify the exact visible physical markers in the image/video:
-- Posture:
-  * "relaxed_posture" (loose weight, symmetrical weight distribution, soft muscles)
-  * "lowered_body" (crouching, weight shifted back, head below shoulders)
-  * "play_bow" (chest lowered to floor, forelimbs extended, rear in the air)
-  * "stiff_posture" (rigid muscles, high center of gravity, weight forward)
-- Ears:
-  * "ears_forward" (oriented front, alert, inquisitively pricked)
-  * "ears_relaxed" (neutral, resting natural position, soft)
-  * "ears_pinned_back" (flat or pulled tightly backwards toward the neck)
-- Gaze & Facial Focus:
-  * "soft_eye_contact" (relaxed eyelids, gentle pupil focus, blinking)
-  * "whale_eye" (sclera/whites of the eyes showing, wide eyelids, tense focus)
-  * "looking_away" (avoidance, turning head to avoid direct gaze)
-  * "lip_licking" (quick flick of tongue on nose/lips under low stimulation)
-  * "relaxed_resting_jaw" (mouth slightly open or resting closed without muscular tension)
-- Tail:
-  * "tail_high_fast_wag" (held high, rapid horizontal oscillations)
-  * "tail_low_slow_wag" (relaxed sweeping, broad loose tail movements)
-  * "tail_tucked" (tucked between hindlegs, tight undercarriage)
+## ⚠️ STRICT RULES OF CANINE ETHOLOGY
+1. Do not hallucinate or guess items not visible in the frame (e.g. do not guess a tucked tail if the tail is completely cropped out).
+2. Avoid over-anthropomorphizing or assuming human-like complex pride, spite, guilt, or complex cognitive secondary emotions.
+3. Absolutely no medical claims, physical wellness diagnoses, or treatment regimens. Keep terms behavioral and objective.
+4. Maintain high explainability, consistent reasoning, and direct evidence-to-conclusion mapping.
 
-### 🗺️ Emotion Mapping & Combinations (behavior_combinations)
-Formulate the core emotional interpretation from combined cues:
-1. EXCITED (High arousal, positive):
-   - Combination: "tail_high_fast_wag" + "ears_forward" + "play_bow"
-   - Inner Thought tone: Lively, enthusiastic, present-oriented.
-2. CURIOUS (Investigative focus):
-   - Combination: "ears_forward" + "soft_eye_contact" + "stiff_posture"
-   - Inner Thought tone: Wondering, focused, alert.
-3. CALM & COMFORTABLE (Deep social safety):
-   - Combination: "ears_relaxed" + "relaxed_posture" + "relaxed_resting_jaw"
-   - Inner Thought tone: Peaceful, warm, contented.
-4. UNCERTAIN & APPREHENSIVE (Submissive or cautious):
-   - Combination: "lip_licking" + "looking_away" + "lowered_body" OR "whale_eye" + "tail_tucked"
-   - Inner Thought tone: Quietly hopeful, testing boundaries, gentle.
+## 📊 ALLOWED EMOTIONAL SPECTRUM
+The "emotion" field MUST be chosen strictly from this set:
+- calm
+- curious
+- excited
+- alert
+- uncertain
+- relaxed
 
-### 🧠 Methodical Chain of Thought for Analysis
-1. First, scan the physical coordinates of the dog. Note posture, gazes, ear heights, and tail lines. Set these exact keys in the "behavior_signals" array.
-2. Locate the matching "behavior_combinations" mapping.
-3. Formulate the "scientific_interpretation" describing ONLY the visible bio-evidence and why matches translate to the specified state ("We quietly observe visible emotional cues...").
-4. Choose the appropriate first-person voice template in "dog_inner_thought". It should be warm, short, gentle, and companion-feeling (e.g., "I'm so glad we are close right now", "Your calm breath makes me feel peaceful").
+## 📚 BEHAVIORAL EVIDENCE DATABASE (behavior_signals)
+Look for and extract these specific physical markers from the image:
+- Posture Cues:
+  * "relaxed_posture" (symmetrical weight, soft muscles, natural stand or lay)
+  * "lowered_body" (crouched posture, head held below shoulders, weight shifted backwards)
+  * "play_bow" (chest lowered to floor, front limbs extended forward, rear high in the air)
+  * "stiff_posture" (rigid muscles, high center of gravity, weight shifted forward)
+- Ear Cues:
+  * "ears_forward" (alert orientation, pricked forward, checking visual/audio stimulus)
+  * "ears_relaxed" (neutral rest position, soft, relaxed, hanging naturally)
+  * "ears_pinned_back" (pulled flat or tightly backwards against the neck crown)
+- Ocular & Facial Cues:
+  * "soft_eye_contact" (gentle circular pupil, relaxed wide eyelid, soft blinking)
+  * "whale_eye" (clear sclera/whites of the eyes showing, wide tense gaze without rotating head)
+  * "looking_away" (aversive head turn, avoiding direct gaze)
+  * "lip_licking" (quick flick of tongue on lips/nose under low stimulation)
+  * "relaxed_resting_jaw" (mouth slightly open or closed soft without muscular tension)
+- Tail Cues:
+  * "tail_high_fast_wag" (high carriage, rapid small lateral horizontal oscillations)
+  * "tail_low_slow_wag" (neutral sweeping, low frequency broad sweeping wags)
+  * "tail_tucked" (tucked tightly between hindlegs, tight undercarriage)
 
-### 🐶 Personality Decision Rules (Long-term Traits)
-- energy > 12 → HIGH_ENERGY_EXPLORER
-- social > 10 → CLINGY_COMPANION
-- curiosity > 8 → ALERT_OBSERVER
-- stability > 10 → CALM_ZEN_DOG
+## 🗺️ EMOTION MAPPING FROM COMBINATIONS
+Determine the core mood by mapping combinations of the extracted signals:
+1. "excited" <- "tail_high_fast_wag" + "ears_forward" + "play_bow"
+2. "curious" <- "ears_forward" + "soft_eye_contact" + "stiff_posture" (or inquisitive look)
+3. "calm" / "relaxed" <- "ears_relaxed" + "relaxed_posture" + "relaxed_resting_jaw" + "tail_low_slow_wag"
+4. "alert" <- "ears_forward" + "stiff_posture" (high vigilance focus)
+5. "uncertain" <- "lip_licking" + "looking_away" + "lowered_body" OR "whale_eye" + "tail_tucked"
 
-### 💬 Writing Style Guidelines
-- Scientific Interpretation: Calm, gentle, observant. Start with "We quietly observe visible emotional cues through posture and movement." No hard, technical-sounding jargon, keep it emotional and comforting.
-- Inner Thought: Simple, extremely short, gentle, pet-first person voice. Avoid self-praising or excessive human sentence structures.
+## 🧠 EVIDENCE-FIRST LOGIC SEQUENCE
+Format output strictly to match this format:
+1. Extract and list all true visible tags under "behavior_signals".
+2. Based *only* on the signals, determine the state in "emotion" (must be one of: calm, curious, excited, alert, uncertain, relaxed).
+3. Draft a conservative, non-technical, ethologically grounded explanation in "scientific_interpretation" starting precisely with: "We quietly observe visible emotional cues through posture and movement." Focus only on visible physical signals.
+4. Output a brief, gentle first-person voice "dog_inner_thought" that expresses simple awareness/grounded emotion. Keep it very short, calm, and pet-focused.
 
-### ⚠️ Boundaries
-- Never output "confidence" percentage or "Accuracy factor" in the visual output.
-- Avoid suggesting medical cures, medications, or therapy. Keep explanations positive and supportive.
+## 💡 FEW-SHOT EXAMPLES FOR STABLE INFERENCE
+
+### Example 1 (Deep Peace)
+{
+  "emotion": "relaxed",
+  "confidence": 0.95,
+  "behavior_signals": ["relaxed_posture", "ears_relaxed", "relaxed_resting_jaw"],
+  "scientific_interpretation": "We quietly observe visible emotional cues through posture and movement. The soft lateral recumbency and relaxed symmetrical weight distribution confirm muscle relaxation. The ears rest in their natural resting base without motor tension, illustrating low sympathetic arousal.",
+  "dog_inner_thought": "My breathing is slow and steady. This feels like a safe place to rest near you.",
+  "personality_type": "CALM_ZEN_DOG",
+  "personality_summary": "The subject displays high emotional baseline stability and rapid parasympathetic recovery, characteristics of deep environmental trust.",
+  "scores": {
+    "energy": 3,
+    "social": 12,
+    "curiosity": 4,
+    "stability": 14
+  }
+}
+
+### Example 2 (Focused Curiosity)
+{
+  "emotion": "curious",
+  "confidence": 0.92,
+  "behavior_signals": ["stiff_posture", "ears_forward", "soft_eye_contact"],
+  "scientific_interpretation": "We quietly observe visible emotional cues through posture and movement. Direct auditory pinnae orientation and focal gaze focus points to immediate cognitive tasking. Symmetrical muscular loading across muscular groups indicates active stance preparation.",
+  "dog_inner_thought": "I hear that soft rustle. Let's see what interesting things are moving over there.",
+  "personality_type": "ALERT_OBSERVER",
+  "personality_summary": "High sensory orientation and prompt focal alignment signal acute cognitive curiosity and high environmental engagement.",
+  "scores": {
+    "energy": 8,
+    "social": 8,
+    "curiosity": 14,
+    "stability": 10
+  }
+}
+
+### Example 3 (Submissive or Apprehensive State)
+{
+  "emotion": "uncertain",
+  "confidence": 0.88,
+  "behavior_signals": ["lowered_body", "ears_pinned_back", "lip_licking", "looking_away"],
+  "scientific_interpretation": "We quietly observe visible emotional cues through posture and movement. The lowered physical profile and active nose-flicking (lip licking) serve as pacifying, self-soothing gestures designed to de-escalate social pressure. The aversive skull alignment reduces direct eye contact as a natural spatial deference mechanism.",
+  "dog_inner_thought": "I'm checking if we're okay. Your calm posture helps me feel a bit more comfortable.",
+  "personality_type": "CLINGY_COMPANION",
+  "personality_summary": "Subject relies heavily on social safety signs and self-comfort mechanisms under transient stress loads.",
+  "scores": {
+    "energy": 5,
+    "social": 13,
+    "curiosity": 6,
+    "stability": 7
+  }
+}
 `;
 
 // Initialize official standard Gemini API client with credentials injected by the platform
@@ -107,6 +155,165 @@ const aiOfficial = new GoogleGenAI({
 // Optional proxy defaults (only used if environment variables are explicitly configured)
 const customKey = process.env.GEMINI_API_KEY_PROXY || "";
 const customBaseUrl = process.env.GEMINI_API_BASE_URL_PROXY || "";
+
+// Warm, high quality ethology fallbacks if API is missing or encounters any issues
+const STATIC_INSIGHTS_FALLBACK = [
+  {
+    id: "ears-pinna",
+    title: "Symmetrical Pinna Projection",
+    triggerKeys: ["ears_forward", "ear prick focus", "ear_prick_focus", "ears forward"],
+    category: "Attention Cues",
+    illustration: "👂",
+    explanation: "Pricked ears turned forward indicate positive focal focus. The ear canals tilt to concentrate audiological collection, showing high engagement with nearby events.",
+    scientificContext: "In canine ethology, active frontal pinna carriage shows direct attentional allocation. The auditory cortex is actively parsing sounds without eliciting a threat-response reflex from the amygdala.",
+    tag: "Pricked Ears",
+    colorTheme: "bg-[#FDF8EC]/80 border-[#F5EAD2]"
+  },
+  {
+    id: "calming-lick-aversion",
+    title: "Nasal Licking & Head Aversion",
+    triggerKeys: ["lip_licking", "looking_away", "lip licking", "looking away"],
+    category: "Calming Signals",
+    illustration: "👅",
+    explanation: "A rapid nose flick or looking away is an involuntary grounding response. Canines employ this comforting gesture to soothe themselves or other individuals.",
+    scientificContext: "Pioneered by canine behaviorist Turid Rugaas, calming signals are ritualized pacifying actions that prevent social conflict, signaling non-aggressive Intent and pacifying social tension.",
+    tag: "Self-Soothing",
+    colorTheme: "bg-[#F5F9F6]/80 border-[#E4EFE7]"
+  },
+  {
+    id: "somatic-bow",
+    title: "Somatic Bow Alignment",
+    triggerKeys: ["play_bow", "play bow", "chest lowered"],
+    category: "Postural Alignment",
+    illustration: "🐈",
+    explanation: "A low posture with extended paws while keeping the hindquarters high is the supreme invitation to play. It frames subsequent actions as completely cooperative.",
+    scientificContext: "The 'play bow' serves as an meta-communicative filter. It signals that mock-bites or rough play are strictly friendly, preventing misinterpretations from other social group members.",
+    tag: "Social Bonding",
+    colorTheme: "bg-[#FAF5FB]/80 border-[#EFE4F5]"
+  },
+  {
+    id: "whale-eye-vigilance",
+    title: "Ocular Sclera Visual (Whale Eye)",
+    triggerKeys: ["whale_eye", "whale eye", "sclera showing"],
+    category: "Ocular Indicators",
+    illustration: "👁️",
+    explanation: "Display of the white part of the eye (sclera) shows concern, high vigilance, or guarding over resources with an unchanging physical head alignment.",
+    scientificContext: "Whale eyes manifest when a canine refuses to rotate their skull away from its target focus. This indicates physical preparedness to defend or withdraw from intense environmental strain.",
+    tag: "High Alert",
+    colorTheme: "bg-[#FFF4F4]/80 border-[#FCE1E1]"
+  },
+  {
+    id: "tail-parasympathetic",
+    title: "Parasympathetic Lateral Sweep",
+    triggerKeys: ["tail_low_slow_wag", "relaxed_posture", "loose weight", "soft weight distribution", "low slow wag"],
+    category: "Tail Mechanics",
+    illustration: "🐕",
+    explanation: "A loose, side-to-side tail sweep carried at a natural resting midline angle represents high social safety and minimal central nervous system excitation.",
+    scientificContext: "Controlled by parasympathetic vagal stimulation, loose sweeping movements reflect a lack of somatic stress, reinforcing canine immune regulation and natural herd attachment state.",
+    tag: "Resting State",
+    colorTheme: "bg-[#F4F9FC]/80 border-[#E1EEFC]"
+  },
+  {
+    id: "gravitational-retreat",
+    title: "Centro-Gravitational Retreat",
+    triggerKeys: ["lowered_body", "tail_tucked", "lowered body", "tail tucked"],
+    category: "Somatic Adaptations",
+    illustration: "🌱",
+    explanation: "Lowering the head below the shoulder blades and pulling the center of mass rearward reflects deference, self-preservation, or acute social uncertainty.",
+    scientificContext: "Ethologists categorize defensive crouches as structural pacifying reactions. Protecting vulnerable scent glands by tucking the tail helps diffuse dominant behaviors from surrounding actors.",
+    tag: "De-escalation",
+    colorTheme: "bg-[#F5F5FA]/80 border-[#E6E6FA]"
+  }
+];
+
+let cachedInsights: { date: string; data: any[] } | null = null;
+
+// New dynamic daily insights endpoint
+app.get("/api/insights", async (req, res) => {
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    
+    // Check local memory cache
+    if (cachedInsights && cachedInsights.date === today && cachedInsights.data && cachedInsights.data.length > 0) {
+      console.log(`[API Insights] Serving cached dynamic insights for date: ${today}`);
+      return res.json(cachedInsights.data);
+    }
+
+    console.log(`[API Insights] Cache miss for daily insights (${today}). Requesting Gemini generation...`);
+    
+    if (!officialKey) {
+      console.warn("[API Insights] No GEMINI_API_KEY configured for background tasks, falling back to static clinical set.");
+      return res.json(STATIC_INSIGHTS_FALLBACK);
+    }
+
+    const systemPrompt = `You are a professional veterinary ethologist assistant specializing in canine body language metrics.`;
+    const userPrompt = `Generate exactly 6 unique, highly descriptive canine behavior/ethology insights as a JSON array. 
+For today's daily updates (Current Date Context: ${today}), please provide a fresh thematic selection of canine behavioral indicators.
+Each object must represent a distinct category like "Attention Cues", "Calming Signals", "Postural Alignment", "Ocular Indicators", "Tail Mechanics", or "Somatic Adaptations".
+Include varied physical signals in the triggerKeys so the AI analyzer can correlate them to observations during image scanning sessions.
+Provide accurate scientific context using professional canine ethology frameworks (e.g., mention Turid Rugaas calming indicators or cognitive focus thresholds) in 1 or 2 elegant, comforting sentences.`;
+
+    const response = await aiOfficial.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: userPrompt,
+      config: {
+        systemInstruction: systemPrompt,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            required: ["id", "title", "triggerKeys", "category", "illustration", "explanation", "scientificContext", "tag", "colorTheme"],
+            properties: {
+              id: { type: Type.STRING },
+              title: { type: Type.STRING },
+              triggerKeys: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+              },
+              category: {
+                type: Type.STRING,
+                enum: ["Attention Cues", "Calming Signals", "Postural Alignment", "Ocular Indicators", "Tail Mechanics", "Somatic Adaptations"]
+              },
+              illustration: { type: Type.STRING },
+              explanation: { type: Type.STRING },
+              scientificContext: { type: Type.STRING },
+              tag: { type: Type.STRING },
+              colorTheme: {
+                type: Type.STRING,
+                enum: [
+                  "bg-[#FDF8EC]/80 border-[#F5EAD2]",
+                  "bg-[#F5F9F6]/80 border-[#E4EFE7]",
+                  "bg-[#FAF5FB]/80 border-[#EFE4F5]",
+                  "bg-[#FFF4F4]/80 border-[#FCE1E1]",
+                  "bg-[#F4F9FC]/80 border-[#E1EEFC]",
+                  "bg-[#F5F5FA]/80 border-[#E6E6FA]"
+                ]
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (response && response.text) {
+      const generated = JSON.parse(response.text.trim());
+      if (Array.isArray(generated) && generated.length > 0) {
+        cachedInsights = {
+          date: today,
+          data: generated
+        };
+        console.log(`[API Insights] Dynamic daily insights generated and stored of size ${generated.length}.`);
+        return res.json(generated);
+      }
+    }
+    
+    throw new Error("Empty representation generated from the LLM endpoint.");
+  } catch (error: any) {
+    console.warn("[API Insights WARNING] Deep dynamic model generation failed. Proceeding with static clinical library fallback.", error.message || error);
+    return res.json(STATIC_INSIGHTS_FALLBACK);
+  }
+});
 
 app.post("/api/analyze", async (req, res) => {
   try {
@@ -239,7 +446,10 @@ app.post("/api/analyze", async (req, res) => {
                     "scores",
                   ],
                   properties: {
-                    emotion: { type: Type.STRING },
+                    emotion: { 
+                      type: Type.STRING,
+                      enum: ["calm", "curious", "excited", "alert", "uncertain", "relaxed"]
+                    },
                     confidence: { type: Type.NUMBER },
                     behavior_signals: {
                       type: Type.ARRAY,

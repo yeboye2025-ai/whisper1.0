@@ -440,9 +440,9 @@ export const PET_BEHAVIOR_INSIGHTS: BehaviorInsight[] = [
   }
 ];
 
-export const getAssociatedInsights = (signals: string[]): BehaviorInsight[] => {
+export const getAssociatedInsights = (signals: string[], currentInsights: BehaviorInsight[] = PET_BEHAVIOR_INSIGHTS): BehaviorInsight[] => {
   if (!signals || signals.length === 0) return [];
-  return PET_BEHAVIOR_INSIGHTS.filter(insight => 
+  return currentInsights.filter(insight => 
     insight.triggerKeys.some(key => 
       signals.some(sig => {
         const s = sig.toLowerCase().replace(/_/g, " ");
@@ -466,24 +466,13 @@ async function runBrowserFallback(
 
   const systemPromptMessage = `${systemInstruction}\n\nIMPORTANT: You must return valid JSON ONLY matching this schema precisely. No preambles, no Markdown code blocks, no backticks, no other text:\n{\n  "emotion": "Joyful",\n  "confidence": 0.95,\n  "behavior_signals": ["tail wagging", "relaxed ears"],\n  "scientific_interpretation": "A simple pet behavioral scientist explanation...",\n  "dog_inner_thought": "I love playing with you!",\n  "personality_type": "HIGH_ENERGY_EXPLORER",\n  "personality_summary": "Description of individual personality.",\n  "scores": { "energy": 14, "social": 12, "curiosity": 9, "stability": 11 }\n}`;
 
-  const openaiCandidates = [
-    { url: `${normalizedBaseUrl}/chat/completions`, headers: { "Authorization": `Bearer ${customKey}` }, model: "gemini-3.5-flash" },
-    { url: `${normalizedBaseUrl}/chat/completions`, headers: { "x-api-key": customKey }, model: "gemini-3.5-flash" },
-    { url: `${normalizedBaseUrl}/chat/completions`, headers: { "x-goog-api-key": customKey }, model: "gemini-3.5-flash" },
-    { url: `${normalizedBaseUrl}/chat/completions`, headers: { "Authorization": `Bearer ${customKey}` }, model: "gemini-2.5-flash" },
-    { url: `${baseWithoutVClass}/v1/chat/completions`, headers: { "Authorization": `Bearer ${customKey}` }, model: "gemini-3.5-flash" },
-    { url: `${baseWithoutVClass}/chat/completions`, headers: { "Authorization": `Bearer ${customKey}` }, model: "gemini-3.5-flash" },
-    { url: `${normalizedBaseUrl}/chat/completions`, headers: { "Authorization": `Bearer ${customKey}` }, model: "gpt-4o-mini" },
-  ];
 
   const geminiCandidates = [
-    { url: `${normalizedBaseUrl}/v1beta/models/gemini-3.5-flash:generateContent?key=${customKey}` },
-    { url: `${normalizedBaseUrl}/v1beta/models/gemini-2.5-flash:generateContent?key=${customKey}` },
-    { url: `${normalizedBaseUrl}/models/gemini-3.5-flash:generateContent?key=${customKey}` },
-    { url: `${normalizedBaseUrl}/models/gemini-2.5-flash:generateContent?key=${customKey}` },
-    { url: `${baseWithoutVClass}/v1beta/models/gemini-3.5-flash:generateContent?key=${customKey}` },
-    { url: `${baseWithoutVClass}/v1beta/models/gemini-2.5-flash:generateContent?key=${customKey}` }
-  ];
+  { url: `${normalizedBaseUrl}/v1beta/models/gemini-2.5-flash:generateContent?key=${customKey}` },
+  { url: `${normalizedBaseUrl}/v1beta/models/gemini-1.5-flash:generateContent?key=${customKey}` },
+  { url: `${normalizedBaseUrl}/models/gemini-2.5-flash:generateContent?key=${customKey}` },
+  { url: `${normalizedBaseUrl}/models/gemini-1.5-flash:generateContent?key=${customKey}` }
+];
 
   for (const candidate of openaiCandidates) {
     try {
@@ -761,6 +750,10 @@ export default function App() {
   const [selectedHistoryEntry, setSelectedHistoryEntry] = useState<HistoryEntry | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Dynamic daily insights states
+  const [insights, setInsights] = useState<BehaviorInsight[]>(PET_BEHAVIOR_INSIGHTS);
+  const [isInsightsLoading, setIsInsightsLoading] = useState(false);
+
   // Video timeline segment states
   const [timelineIndex, setTimelineIndex] = useState<number>(0);
 
@@ -769,6 +762,34 @@ export default function App() {
   const [clientBaseUrl, setClientBaseUrl] = useState<string>(() => localStorage.getItem("pet_whisper_custom_url") || "");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'analyzer' | 'archives' | 'insights'>('analyzer');
+
+  // Load dynamic daily insights from backend
+  useEffect(() => {
+    let active = true;
+    async function fetchDailyInsights() {
+      setIsInsightsLoading(true);
+      try {
+        const response = await fetch("/api/insights");
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data) && data.length > 0 && active) {
+            setInsights(data);
+            console.log("[App] Dynamically loaded daily insights from standard backend:", data);
+          }
+        }
+      } catch (err) {
+        console.warn("[App] Could not fetch dynamic daily insights, continuing with static clinical set.", err);
+      } finally {
+        if (active) {
+          setIsInsightsLoading(false);
+        }
+      }
+    }
+    fetchDailyInsights();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -1501,7 +1522,7 @@ export default function App() {
 
                       {/* CARD 5: Associated Ethological Insights */}
                       {(() => {
-                        const matches = getAssociatedInsights(activeResult.behavior_signals);
+                        const matches = getAssociatedInsights(activeResult.behavior_signals, insights);
                         if (matches.length === 0) return null;
                         return (
                           <motion.div 
@@ -1627,7 +1648,7 @@ export default function App() {
 
             {/* Apple Health-styled Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {PET_BEHAVIOR_INSIGHTS.map((insight) => {
+              {insights.map((insight) => {
                 // Determine if currently active or highlighted in active session
                 const isActiveInSession = activeResult && activeResult.behavior_signals
                   ? insight.triggerKeys.some(key => 
