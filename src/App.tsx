@@ -359,6 +359,100 @@ const cardVariants = {
   }
 };
 
+export interface BehaviorInsight {
+  id: string;
+  title: string;
+  triggerKeys: string[];
+  category: "Attention Cues" | "Calming Signals" | "Postural Alignment" | "Ocular Indicators" | "Tail Mechanics" | "Somatic Adaptations";
+  illustration: string;
+  explanation: string;
+  scientificContext: string;
+  tag: string;
+  colorTheme: string; // for soft Apple Health style background tints
+}
+
+export const PET_BEHAVIOR_INSIGHTS: BehaviorInsight[] = [
+  {
+    id: "ears-pinna",
+    title: "Symmetrical Pinna Projection",
+    triggerKeys: ["ears_forward", "ear prick focus", "ear_prick_focus", "ears forward"],
+    category: "Attention Cues",
+    illustration: "👂",
+    explanation: "Pricked ears turned forward indicate positive focal focus. The ear canals tilt to concentrate audiological collection, showing high engagement with nearby events.",
+    scientificContext: "In canine ethology, active frontal pinna carriage shows direct attentional allocation. The auditory cortex is actively parsing sounds without eliciting a threat-response reflex from the amygdala.",
+    tag: "Pricked Ears",
+    colorTheme: "bg-[#FDF8EC]/80 border-[#F5EAD2]"
+  },
+  {
+    id: "calming-lick-aversion",
+    title: "Nasal Licking & Head Aversion",
+    triggerKeys: ["lip_licking", "looking_away", "lip licking", "looking away"],
+    category: "Calming Signals",
+    illustration: "👅",
+    explanation: "A rapid nose flick or looking away is an involuntary grounding response. Canines employ this comforting gesture to soothe themselves or other individuals.",
+    scientificContext: "Pioneered by canine behaviorist Turid Rugaas, calming signals are ritualized pacifying actions that prevent social conflict, signaling non-aggressive Intent and pacifying social tension.",
+    tag: "Self-Soothing",
+    colorTheme: "bg-[#F5F9F6]/80 border-[#E4EFE7]"
+  },
+  {
+    id: "somatic-bow",
+    title: "Somatic Bow Alignment",
+    triggerKeys: ["play_bow", "play bow", "chest lowered"],
+    category: "Postural Alignment",
+    illustration: "🐈",
+    explanation: "A low posture with extended paws while keeping the hindquarters high is the supreme invitation to play. It frames subsequent actions as completely cooperative.",
+    scientificContext: "The 'play bow' serves as an meta-communicative filter. It signals that mock-bites or rough play are strictly friendly, preventing misinterpretations from other social group members.",
+    tag: "Social Bonding",
+    colorTheme: "bg-[#FAF5FB]/80 border-[#EFE4F5]"
+  },
+  {
+    id: "whale-eye-vigilance",
+    title: "Ocular Sclera Visual (Whale Eye)",
+    triggerKeys: ["whale_eye", "whale eye", "sclera showing"],
+    category: "Ocular Indicators",
+    illustration: "👁️",
+    explanation: "Display of the white part of the eye (sclera) shows concern, high vigilance, or guarding over resources with an unchanging physical head alignment.",
+    scientificContext: "Whale eyes manifest when a canine refuses to rotate their skull away from its target focus. This indicates physical preparedness to defend or withdraw from intense environmental strain.",
+    tag: "High Alert",
+    colorTheme: "bg-[#FFF4F4]/80 border-[#FCE1E1]"
+  },
+  {
+    id: "tail-parasympathetic",
+    title: "Parasympathetic Lateral Sweep",
+    triggerKeys: ["tail_low_slow_wag", "relaxed_posture", "loose weight", "soft weight distribution", "low slow wag"],
+    category: "Tail Mechanics",
+    illustration: "🐕",
+    explanation: "A loose, side-to-side tail sweep carried at a natural resting midline angle represents high social safety and minimal central nervous system excitation.",
+    scientificContext: "Controlled by parasympathetic vagal stimulation, loose sweeping movements reflect a lack of somatic stress, reinforcing canine immune regulation and natural herd attachment state.",
+    tag: "Resting State",
+    colorTheme: "bg-[#F4F9FC]/80 border-[#E1EEFC]"
+  },
+  {
+    id: "gravitational-retreat",
+    title: "Centro-Gravitational Retreat",
+    triggerKeys: ["lowered_body", "tail_tucked", "lowered body", "tail tucked"],
+    category: "Somatic Adaptations",
+    illustration: "🌱",
+    explanation: "Lowering the head below the shoulder blades and pulling the center of mass rearward reflects deference, self-preservation, or acute social uncertainty.",
+    scientificContext: "Ethologists categorize defensive crouches as structural pacifying reactions. Protecting vulnerable scent glands by tucking the tail helps diffuse dominant behaviors from surrounding actors.",
+    tag: "De-escalation",
+    colorTheme: "bg-[#F5F5FA]/80 border-[#E6E6FA]"
+  }
+];
+
+export const getAssociatedInsights = (signals: string[]): BehaviorInsight[] => {
+  if (!signals || signals.length === 0) return [];
+  return PET_BEHAVIOR_INSIGHTS.filter(insight => 
+    insight.triggerKeys.some(key => 
+      signals.some(sig => {
+        const s = sig.toLowerCase().replace(/_/g, " ");
+        const k = key.toLowerCase().replace(/_/g, " ");
+        return s.includes(k) || k.includes(s);
+      })
+    )
+  );
+};
+
 async function runBrowserFallback(
   customBaseUrl: string,
   customKey: string,
@@ -674,7 +768,7 @@ export default function App() {
   const [clientKey, setClientKey] = useState<string>(() => localStorage.getItem("pet_whisper_custom_key") || "");
   const [clientBaseUrl, setClientBaseUrl] = useState<string>(() => localStorage.getItem("pet_whisper_custom_url") || "");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'analyzer' | 'archives'>('analyzer');
+  const [activeTab, setActiveTab] = useState<'analyzer' | 'archives' | 'insights'>('analyzer');
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -907,6 +1001,18 @@ export default function App() {
             <BrainCircuit className="w-3.5 h-3.5" />
             <span>Analyzer</span>
           </button>
+          
+          <button
+            onClick={() => setActiveTab('insights')}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-mono uppercase tracking-wider transition-all duration-300
+              ${activeTab === 'insights' 
+                ? 'bg-white text-black font-semibold shadow-sm' 
+                : 'text-[#6B7280] hover:text-black hover:bg-white/40'}`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#D8B7A0]" />
+            <span>Insights</span>
+          </button>
+
           <button
             onClick={() => setActiveTab('archives')}
             className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-mono uppercase tracking-wider transition-all duration-300 relative
@@ -942,7 +1048,7 @@ export default function App() {
       </nav>
 
       <AnimatePresence mode="wait">
-        {activeTab === 'analyzer' ? (
+        {activeTab === 'analyzer' && (
           <motion.div 
             key="analyzer-view animate"
             initial={{ opacity: 0 }}
@@ -1008,7 +1114,7 @@ export default function App() {
             </header>
 
             {/* UPLOAD PANEL - Redesigned to be extremely compact, sleek companion-like box */}
-            <section className="w-full max-w-xl mx-auto px-6 mb-12">
+            <section className="w-full max-w-2xl mx-auto px-6 mb-12">
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1033,13 +1139,13 @@ export default function App() {
                 <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 border-t sm:border-t-0 sm:border-l border-black/[0.06] pt-3 sm:pt-0 sm:pl-3">
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex-1 sm:flex-initial py-2 px-4 bg-[#F2EDE4] hover:bg-[#EAE2D5] text-[#111111] font-mono text-[10px] uppercase tracking-wider rounded-xl transition-colors font-semibold select-none cursor-pointer"
+                    className="flex-1 sm:flex-initial py-2 px-3.5 bg-[#F2EDE4] hover:bg-[#EAE2D5] text-[#111111] font-mono text-[10px] uppercase tracking-wider rounded-xl transition-colors font-semibold select-none cursor-pointer"
                   >
                     Select File
                   </button>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex-1 sm:flex-initial py-2 px-4 bg-[#D8B7A0] hover:bg-[#CBA68D] text-white font-mono text-[10px] uppercase tracking-wider rounded-xl shadow-sm transition-colors font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="flex-1 sm:flex-initial py-2 px-3.5 bg-[#D8B7A0] hover:bg-[#CBA68D] text-white font-mono text-[10px] uppercase tracking-wider rounded-xl shadow-sm transition-colors font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <span>Analyze</span>
                     <Sparkles className="w-3 h-3 animate-pulse" />
@@ -1260,11 +1366,8 @@ export default function App() {
                         <div className="space-y-4">
                           <div className="flex justify-between items-start gap-4">
                             <div className="space-y-0.5">
-                              <span className="text-[10px] font-mono text-[#D8B7A0] uppercase tracking-widest font-semibold">Active State</span>
+                              <span className="text-[10px] font-mono text-[#D8B7A0] uppercase tracking-widest font-semibold">Emotional Interpretation</span>
                               <h2 className="text-3xl font-serif text-[#111111] capitalize">{activeResult.emotion}</h2>
-                              <p className="text-[10px] font-mono text-[#6B7280] uppercase tracking-wider">
-                                Confidence Factor: {(activeResult.confidence * 100).toFixed(0)}%
-                              </p>
                             </div>
                             <span className="px-3 py-1.5 bg-[#F6F3EE] border border-black/[0.04] rounded-full text-[10px] font-mono text-[#6B7280] tracking-wider capitalize">
                               {activeResult.personality_type.replace(/_/g, " ").toLowerCase()}
@@ -1279,7 +1382,7 @@ export default function App() {
                         className="p-6 bg-white/72 border border-[#EBE6DD] rounded-[1.5rem] shadow-sm text-left"
                       >
                         <div className="space-y-3">
-                          <span className="text-[10px] font-mono text-[#D8B7A0] uppercase tracking-widest font-semibold block">Observed cues</span>
+                          <span className="text-[10px] font-mono text-[#D8B7A0] uppercase tracking-widest font-semibold block">Behavioral Evidence</span>
                           <div className="flex gap-2 flex-wrap">
                             {activeResult.behavior_signals.map((sig, i) => (
                               <span 
@@ -1299,7 +1402,7 @@ export default function App() {
                         className="p-6 bg-white/72 border border-[#EBE6DD] rounded-[1.5rem] shadow-sm text-left space-y-6"
                       >
                         <div className="space-y-3">
-                          <span className="text-[10px] font-mono text-[#D8B7A0] uppercase tracking-widest font-semibold block">Gentle Insight</span>
+                          <span className="text-[10px] font-mono text-[#D8B7A0] uppercase tracking-widest font-semibold block">Interpretation Logic</span>
                           <p className="text-xs sm:text-sm text-[#3A3A38] leading-relaxed font-sans font-light">
                             {activeResult.scientific_interpretation}
                           </p>
@@ -1341,12 +1444,57 @@ export default function App() {
                         </div>
                       </motion.div>
 
+                      {/* CARD 5: Associated Ethological Insights */}
+                      {(() => {
+                        const matches = getAssociatedInsights(activeResult.behavior_signals);
+                        if (matches.length === 0) return null;
+                        return (
+                          <motion.div 
+                            variants={cardVariants}
+                            className="p-6 bg-white/72 border border-[#EBE6DD] rounded-[1.5rem] shadow-sm text-left space-y-4"
+                          >
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-mono text-[#D8B7A0] uppercase tracking-widest font-semibold block">Connected Canine Knowledge</span>
+                              <h3 className="font-serif text-lg text-[#111111]">Anatomical Signal Context</h3>
+                            </div>
+                            
+                            <div className="space-y-3.5">
+                              {matches.map((insight) => (
+                                <div 
+                                  key={insight.id} 
+                                  className={`p-4 rounded-2xl border ${insight.colorTheme} transition-all duration-300 relative overflow-hidden`}
+                                >
+                                  <div className="flex items-center justify-between gap-2 mb-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-lg shrink-0">{insight.illustration}</span>
+                                      <h4 className="font-serif text-sm font-semibold text-[#111111]">{insight.title}</h4>
+                                    </div>
+                                    <span className="text-[9px] font-mono font-medium px-2 py-0.5 bg-black/[0.04] text-[#6B7280] rounded-full uppercase tracking-wider">
+                                      {insight.tag}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-[#3A3A38] leading-relaxed font-sans font-light">
+                                    {insight.explanation}
+                                  </p>
+                                  <div className="mt-2.5 pt-2.5 border-t border-black/[0.03] text-[10px] sm:text-xs text-[#6B7280] italic leading-relaxed">
+                                    <span className="font-mono uppercase font-bold text-[8px] tracking-wider text-[#D8B7A0] block not-italic">Scientific Core</span>
+                                    {insight.scientificContext}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </motion.div>
+                        );
+                      })()}
+
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
 
             </section>
+
+            {/* Recents banner and observation lane placeholder */}
 
             {/* RECENT READS CAROUSEL LANE - Folds elegantly under report workspace */}
             {history.length > 0 && (
@@ -1399,8 +1547,107 @@ export default function App() {
             )}
 
           </motion.div>
-        ) : (
-          /* ARCHIVES TAB VIEWPORT - Clean, modular design */
+        )}
+
+        {/* INSIGHTS TAB VIEWPORT */}
+        {activeTab === 'insights' && (
+          <motion.section 
+            key="insights-view animate"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.3 }}
+            className="max-w-6xl mx-auto px-6 py-12 space-y-8 min-h-[65vh] text-left"
+          >
+            <div className="border-b border-black/[0.05] pb-6 space-y-1">
+              <div className="flex items-center gap-2 text-[10px] font-mono text-[#9E7B62] uppercase tracking-[0.2em] font-semibold">
+                <Sparkles className="w-3.5 h-3.5 text-[#D8B7A0]" />
+                Ethological Insights
+              </div>
+              <h2 className="text-3xl font-serif font-normal text-[#111111]">Canine Ethology Library</h2>
+              <p className="text-xs text-[#6B7280] max-w-xl font-light leading-relaxed">
+                Explore clinical body language insights developed by professional veterinary behavioral scientists. Cards automatically highlight which physical cues were identified in your current scanning session.
+              </p>
+            </div>
+
+            {/* Apple Health-styled Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {PET_BEHAVIOR_INSIGHTS.map((insight) => {
+                // Determine if currently active or highlighted in active session
+                const isActiveInSession = activeResult && activeResult.behavior_signals
+                  ? insight.triggerKeys.some(key => 
+                      activeResult.behavior_signals.some(sig => {
+                        const s = sig.toLowerCase().replace(/_/g, " ");
+                        const k = key.toLowerCase().replace(/_/g, " ");
+                        return s.includes(k) || k.includes(s);
+                      })
+                    )
+                  : false;
+
+                return (
+                  <motion.div
+                    key={insight.id}
+                    whileHover={{ y: -4, boxShadow: "0 10px 30px rgba(0,0,0,0.02)" }}
+                    transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                    className={`flex flex-col justify-between p-6 rounded-[1.5rem] border transition-all duration-300 relative overflow-hidden backdrop-blur-sm
+                      ${isActiveInSession 
+                        ? 'bg-white border-[#D8B7A0] ring-1 ring-[#D8B7A0]/50 shadow-md shadow-[#D8B7A0]/5' 
+                        : 'bg-white/72 border-[#EBE6DD] hover:border-[#D8B7A0]/40 shadow-sm'
+                      }`}
+                  >
+                    {/* Active indicator badge */}
+                    {isActiveInSession && (
+                      <div className="absolute top-4 right-4 flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF5F2] border border-[#D8B7A0]/40 text-[9px] font-mono text-[#9E7B62] font-semibold tracking-wider animate-pulse">
+                        <span>✧ Observed in Scan</span>
+                      </div>
+                    )}
+
+                    <div className="space-y-4">
+                      {/* Upper Section */}
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl p-2 bg-black/[0.02] rounded-xl leading-none">{insight.illustration}</span>
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] font-mono text-[#D8B7A0] uppercase tracking-wider block font-semibold">
+                            {insight.category}
+                          </span>
+                          <h4 className="font-serif text-base text-[#111111] leading-tight font-medium">
+                            {insight.title}
+                          </h4>
+                        </div>
+                      </div>
+
+                      {/* Middle Text Description */}
+                      <p className="text-xs text-[#3A3A38] leading-relaxed font-sans font-light">
+                        {insight.explanation}
+                      </p>
+
+                      {/* Scientific Reveal Block */}
+                      <div className="mt-2.5 pt-3 border-t border-black/[0.03] text-[11px] text-[#6B7280] leading-relaxed italic bg-black/[0.01] p-3 rounded-xl">
+                        <span className="font-mono uppercase font-bold text-[8px] tracking-wider text-[#D8B7A0] block not-italic pb-1 font-semibold">Ethological Foundation</span>
+                        {insight.scientificContext}
+                      </div>
+                    </div>
+
+                    {/* Card Footer Tag */}
+                    <div className="mt-4 pt-3 border-t border-black/[0.03] flex items-center justify-between">
+                      <span className="text-[9px] font-mono font-semibold px-2.5 py-1 bg-[#F6F3EE] text-[#6B7280] rounded-lg tracking-wider uppercase">
+                        {insight.tag}
+                      </span>
+                      
+                      {/* Subtle trigger label */}
+                      <span className="text-[8px] font-mono text-black/30">
+                        Trigger: {insight.triggerKeys[0].replace(/_/g, " ")}
+                      </span>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.section>
+        )}
+
+        {/* ARCHIVES TAB VIEWPORT - Clean, modular design */}
+        {activeTab === 'archives' && (
           <motion.section 
             key="archives-view animate"
             initial={{ opacity: 0, y: 12 }}
@@ -1478,9 +1725,6 @@ export default function App() {
                         <div className="flex justify-between items-start gap-4">
                           <span className="text-[9px] font-mono text-[#6B7280] bg-[#EAE2D5]/50 px-2 py-0.5 rounded capitalize">
                             {entry.personality_type.replace(/_/g, " ").toLowerCase()}
-                          </span>
-                          <span className="text-[9px] font-mono text-black/40">
-                            Fit: {Math.round(entry.confidence * 100)}%
                           </span>
                         </div>
                         <h4 className="font-serif text-lg text-[#111111] capitalize">{entry.emotion}</h4>
