@@ -112,9 +112,26 @@ app.post("/api/analyze", async (req, res) => {
   try {
     const { mediaData, mimeType, customKey: clientKey, customBaseUrl: clientBaseUrl } = req.body;
 
-    if (!mediaData || !mimeType) {
-      return res.status(400).json({ error: "Missing media data or mime type" });
+    // Strict validation: Verify image/photo payload is provided and is a non-empty string
+    if (!mediaData || typeof mediaData !== "string" || mediaData.trim().length === 0) {
+      console.error("[API Analyze ERROR] Empty or invalid mediaData parsed.");
+      return res.status(400).json({ error: "No image or video frame was provided. Please select an image/video to analyze." });
     }
+
+    if (!mimeType || typeof mimeType !== "string" || mimeType.trim().length === 0) {
+      console.error("[API Analyze ERROR] Empty or invalid mimeType parsed.");
+      return res.status(400).json({ error: "Missing media mime type. Unable to decode content." });
+    }
+
+    const base64Len = mediaData.length;
+    const estimatedSizeBytes = Math.round((base64Len * 3) / 4);
+    const estimatedSizeKB = (estimatedSizeBytes / 1024).toFixed(2);
+
+    console.log("==================== [API ANALYZE REQUEST] ====================");
+    console.log(`- Mime Type:             ${mimeType}`);
+    console.log(`- Base64 length:         ${base64Len} characters`);
+    console.log(`- Estimated image size:  ${estimatedSizeKB} KB`);
+    console.log("===============================================================");
 
     const activeBaseUrl = clientBaseUrl || customBaseUrl;
     const activeKey = clientKey || customKey;
@@ -197,19 +214,15 @@ app.post("/api/analyze", async (req, res) => {
           try {
             const response = await attempt.client.models.generateContent({
               model: attempt.model,
-              contents: {
-                parts: [
-                  {
-                    inlineData: {
-                      data: mediaData,
-                      mimeType: mimeType,
-                    },
+              contents: [
+                "Analyze this dog image or video frame. Return personality classification and emotional state as JSON.",
+                {
+                  inlineData: {
+                    data: mediaData,
+                    mimeType: mimeType,
                   },
-                  {
-                    text: "Analyze this dog image or video frame. Return personality classification and emotional state as JSON.",
-                  },
-                ],
-              },
+                }
+              ],
               config: {
                 systemInstruction: SYSTEM_INSTRUCTION,
                 responseMimeType: "application/json",
@@ -294,7 +307,11 @@ app.post("/api/analyze", async (req, res) => {
       });
     }
 
-    console.log(`Canine behavior generation succeeded via: ${finalModelUsed}`);
+    console.log("==================== [GEMINI API RESPONSE] ====================");
+    console.log(`- Final Model Used:  ${finalModelUsed}`);
+    console.log(`- Response Content:`);
+    console.log(responseText);
+    console.log("===============================================================");
 
     // Clean up potential markdown blocks returned by some models
     let text = responseText.replace(/^```json\n?/, "").replace(/\n?```$/, "").trim();

@@ -1348,6 +1348,61 @@ export default function App() {
                         <div className="h-12 w-full bg-black/[0.02] rounded-xl animate-pulse" />
                       </div>
                     </motion.div>
+                  ) : (!hasUserResult && media) ? (
+                    /* SCAN FAILED OR NO RESULT - Beautiful informative diagnostics card */
+                    <motion.div
+                      key="report-failed"
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -12 }}
+                      className="bg-white/72 border border-red-200/60 rounded-[2rem] p-8 space-y-6 shadow-sm text-left relative overflow-hidden"
+                    >
+                      {/* Quiet glowing light in background */}
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-2xl pointer-events-none" />
+
+                      <div className="space-y-2">
+                        <span className="text-[9px] font-mono text-red-500 uppercase tracking-widest font-bold">Analysis Terminated</span>
+                        <h3 className="text-xl font-serif text-red-950 font-medium">Visual Assessment Unsuccessful</h3>
+                      </div>
+
+                      <p className="text-xs text-[#555] leading-relaxed font-sans font-light">
+                        We could not parse your uploaded file. This usually happens if the Gemini API payload exceeds server limits, if Vercel encounters a network error, or if your Gemini API secret key is missing as a backend environment variable.
+                      </p>
+                      
+                      {error && (
+                        <div className="p-4 bg-red-50/50 border border-red-100 rounded-2xl space-y-2 mt-4">
+                          <span className="font-mono text-[8px] uppercase tracking-wider text-red-500 font-bold block">Developer Diagnostics Context:</span>
+                          <p className="text-xs font-mono text-red-800 leading-normal break-all bg-white/40 p-2.5 rounded-lg border border-red-100/40 select-text">
+                            {error}
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="pt-2 flex flex-wrap gap-3">
+                        <button
+                          onClick={() => {
+                            if (fileInputRef.current) {
+                              fileInputRef.current.value = "";
+                              fileInputRef.current.click();
+                            }
+                          }}
+                          className="py-1.5 px-4 bg-[#F2EDE4] hover:bg-[#EAE2D5] text-[#111111] font-mono text-[10px] uppercase tracking-wider rounded-xl transition-colors font-semibold shadow-sm cursor-pointer"
+                        >
+                          Retry Upload
+                        </button>
+                        <button
+                          onClick={() => {
+                            setError(null);
+                            setMedia(null);
+                            setResult(null);
+                            setMimeType(null);
+                          }}
+                          className="py-1.5 px-4 bg-transparent border border-black/[0.08] text-black/50 hover:text-black hover:bg-black/[0.02] font-mono text-[10px] uppercase tracking-wider rounded-xl transition-colors font-semibold cursor-pointer"
+                        >
+                          Clear Session
+                        </button>
+                      </div>
+                    </motion.div>
                   ) : (
                     
                     /* RESULTS CONTAINER - Stagger card reveal with slight blur fade transitions */
