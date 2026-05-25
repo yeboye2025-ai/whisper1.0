@@ -51,6 +51,18 @@ interface AnalysisResult {
   personality_type: string;
   personality_summary: string;
   scores: Scores;
+
+  // New fields from the custom framework
+  observed_behavioral_signals?: string[];
+  behavior_science_interpretation?: string;
+  emotional_state_analysis?: string;
+  stress_signals_detected?: string[];
+  attachment_behavior?: string;
+  curiosity_level?: string;
+  environmental_confidence?: string;
+  summary?: string;
+  unique_behavior_observation?: string;
+  interaction_intent?: string;
 }
 
 interface HistoryEntry extends AnalysisResult {
@@ -68,36 +80,66 @@ interface TimelineSegment extends AnalysisResult {
 const MILO_EXAMPLE_TIMELINE: TimelineSegment[] = [
   {
     timeRange: "0s – 3s",
-    emotion: "Deep Calm",
+    emotion: "low-arousal environmental comfort",
     confidence: 0.98,
     dog_inner_thought: "I'm so glad we are just sitting here together. This moment feels warm, quiet, and completely peaceful.",
     behavior_signals: ["Soft weight distribution", "Relaxed eye contact", "Slight tail sway", "Neutral head carriage"],
+    observed_behavioral_signals: ["Soft weight distribution", "Relaxed eye contact", "Slight tail sway", "Neutral head carriage"],
     scientific_interpretation: "We quietly observe visible emotional cues through posture and movement. Milo's natural forward leaning weight distribution coupled with a slow, even tail wag reflects a high level of comfort and secure engagement. The lack of tension around his muzzle indicates deep cognitive ease.",
+    behavior_science_interpretation: "We quietly observe visible emotional cues through posture and movement. Milo's natural forward leaning weight distribution coupled with a slow, even tail wag reflects a high level of comfort and secure engagement. The lack of tension around his muzzle indicates deep cognitive ease.",
+    emotional_state_analysis: "Parasympathetic activation pattern dominant. Low heart rate variability proxy indicated by gentle ocular focus and muscular softening. Excellent emotional baseline compliance.",
+    stress_signals_detected: [],
+    attachment_behavior: "Proximity Seeking & Soft Leaning",
+    curiosity_level: "Moderate & Centered",
+    environmental_confidence: "Robust / Securely Attached",
+    summary: "Milo exhibits high emotional resilience and secure attachments, displaying gentle curiosity towards his human guide.",
     personality_type: "Gentle Observer",
     personality_summary: "Milo exhibits high emotional resilience and secure attachments, displaying gentle curiosity towards his human guide.",
-    scores: { energy: 6, social: 19, curiosity: 11, stability: 18 }
+    scores: { energy: 6, social: 19, curiosity: 11, stability: 18 },
+    unique_behavior_observation: "Milo's front paws are extended symmetrically, and he keeps his chest resting parallel to the grounding surface.",
+    interaction_intent: "maintaining proximity"
   },
   {
     timeRange: "4s – 7s",
-    emotion: "Mindful Curiosity",
+    emotion: "mild social curiosity",
     confidence: 0.96,
     dog_inner_thought: "What's that gentle sound? Oh, I see your soft focus on me. I love listening to your quiet breathing.",
     behavior_signals: ["Ear prick focus", "Soft head tilt", "Intense pupil contact", "Inquisitive posture"],
+    observed_behavioral_signals: ["Ear prick focus", "Soft head tilt", "Intense pupil contact", "Inquisitive posture"],
     scientific_interpretation: "A minor sonic stimulus triggers a secondary attention cascade. The expansion of his pupillary aperture coupled with an ear-prick focus indicates quiet, safe cognitive exploration rather than somatic alarm.",
+    behavior_science_interpretation: "A minor sonic stimulus triggers a secondary attention cascade. The expansion of his pupillary aperture coupled with an ear-prick focus indicates quiet, safe cognitive exploration rather than somatic alarm.",
+    emotional_state_analysis: "Visual and auditory orienting response triggered. High-level cognitive tasking, transitioning into positive curiosity. Low sympathetic arousal threat levels.",
+    stress_signals_detected: [],
+    attachment_behavior: "Focused Social Bonding",
+    curiosity_level: "High / Inquisitive Focus",
+    environmental_confidence: "High / Confident Explorer",
+    summary: "High sensory orientation and prompt focal alignment signal acute cognitive curiosity and high environmental engagement.",
     personality_type: "Gentle Observer",
     personality_summary: "Milo exhibits high emotional resilience and secure attachments, displaying gentle curiosity towards his human guide.",
-    scores: { energy: 11, social: 17, curiosity: 19, stability: 17 }
+    scores: { energy: 11, social: 17, curiosity: 19, stability: 17 },
+    unique_behavior_observation: "Milo slowly shifts his ears outward, turning his eyes downward toward his human companion's hand.",
+    interaction_intent: "waiting for engagement"
   },
   {
     timeRange: "8s – 12s",
-    emotion: "Loving Devotion",
+    emotion: "gentle attachment seeking",
     confidence: 0.99,
     dog_inner_thought: "You are my entire world. I don't need any words to write it, I just lean closer to be near you.",
     behavior_signals: ["Relaxed resting jaw", "Half-closed soft eyelids", "Slow rhythmic sigh", "Proximity leaning"],
+    observed_behavioral_signals: ["Relaxed resting jaw", "Half-closed soft eyelids", "Slow rhythmic sigh", "Proximity leaning"],
     scientific_interpretation: "Milo enters a full regulatory bonding phase, displaying zero defensive markers. Parasympathetic tone is extremely dominant, confirming deep social connection and unreserved surrender of alertness.",
+    behavior_science_interpretation: "Milo enters a full regulatory bonding phase, displaying zero defensive markers. Parasympathetic tone is extremely dominant, confirming deep social connection and unreserved surrender of alertness.",
+    emotional_state_analysis: "Oxytocin cycle reinforcement. Soft eyelids and low head proximity illustrate absolute social integration and deep environmental trust with partner.",
+    stress_signals_detected: [],
+    attachment_behavior: "Unconditional Social Leaning & Contact seeking",
+    curiosity_level: "Low / Fully At-Ease",
+    environmental_confidence: "Maximal Security / Rested",
+    summary: "Milo exhibits high emotional resilience and secure attachments, displaying gentle curiosity towards his human guide.",
     personality_type: "Gentle Observer",
     personality_summary: "Milo exhibits high emotional resilience and secure attachments, displaying gentle curiosity towards his human guide.",
-    scores: { energy: 4, social: 20, curiosity: 8, stability: 20 }
+    scores: { energy: 4, social: 20, curiosity: 8, stability: 20 },
+    unique_behavior_observation: "Milo leans his shoulder weight heavily against the leg of his human while squinting his eyelids softly.",
+    interaction_intent: "seeking reassurance"
   }
 ];
 
@@ -443,14 +485,29 @@ export const PET_BEHAVIOR_INSIGHTS: BehaviorInsight[] = [
 export const getAssociatedInsights = (signals: string[], currentInsights: BehaviorInsight[] = PET_BEHAVIOR_INSIGHTS): BehaviorInsight[] => {
   if (!signals || signals.length === 0) return [];
   return currentInsights.filter(insight => 
-    insight.triggerKeys.some(key => 
+    insight.triggerKeys?.some(key => 
       signals.some(sig => {
-        const s = sig.toLowerCase().replace(/_/g, " ");
-        const k = key.toLowerCase().replace(/_/g, " ");
+        const s = (sig || "").toLowerCase().replace(/_/g, " ");
+        const k = (key || "").toLowerCase().replace(/_/g, " ");
         return s.includes(k) || k.includes(s);
       })
     )
   );
+};
+
+export const getSafeIllustration = (illustration: string, title?: string, category?: string): string => {
+  if (!illustration || illustration.length > 3 || illustration.includes(".") || illustration.includes("_")) {
+    const titleLower = (title || "").toLowerCase();
+    const catLower = (category || "").toLowerCase();
+    if (titleLower.includes("ear") || catLower.includes("attention")) return "👂";
+    if (titleLower.includes("lick") || titleLower.includes("tongue") || catLower.includes("calming")) return "👅";
+    if (titleLower.includes("eye") || titleLower.includes("gaze") || catLower.includes("ocular")) return "👁️";
+    if (titleLower.includes("tail") || catLower.includes("tail")) return "🐕";
+    if (titleLower.includes("bow") || titleLower.includes("crouch") || catLower.includes("postural")) return "🐩";
+    if (titleLower.includes("breath") || titleLower.includes("heart") || catLower.includes("somatic") || titleLower.includes("retreat")) return "🌱";
+    return "🐾";
+  }
+  return illustration;
 };
 
 async function runBrowserFallback(
@@ -468,58 +525,11 @@ async function runBrowserFallback(
 
 
   const geminiCandidates = [
-  { url: `${normalizedBaseUrl}/v1beta/models/gemini-2.5-flash:generateContent?key=${customKey}` },
-  { url: `${normalizedBaseUrl}/v1beta/models/gemini-1.5-flash:generateContent?key=${customKey}` },
-  { url: `${normalizedBaseUrl}/models/gemini-2.5-flash:generateContent?key=${customKey}` },
-  { url: `${normalizedBaseUrl}/models/gemini-1.5-flash:generateContent?key=${customKey}` }
-];
-
-  for (const candidate of openaiCandidates) {
-    try {
-      console.log(`Browser Fallback: Testing OpenAI candidate URL: ${candidate.url}`);
-      const res = await fetch(candidate.url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...candidate.headers
-        },
-        body: JSON.stringify({
-          model: candidate.model,
-          messages: [
-            { role: "system", content: systemPromptMessage },
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: "Analyze this dog image or video frame. Return personality classification and emotional state as JSON."
-                },
-                {
-                  type: "image_url",
-                  image_url: {
-                    url: `data:${mimeType};base64,${mediaData}`
-                  }
-                }
-              ]
-            }
-          ],
-          response_format: { type: "json_object" }
-        })
-      });
-
-      if (res.ok) {
-        const resultObj = await res.json();
-        const contentText = resultObj.choices?.[0]?.message?.content;
-        if (contentText) {
-          console.log("Browser Fallback: OpenAI-compatible candidate succeeded!");
-          const jsonStr = contentText.replace(/^```json\n?/, "").replace(/\n?```$/, "").trim();
-          return JSON.parse(jsonStr);
-        }
-      }
-    } catch (err: any) {
-      console.warn(`Browser Fallback OpenAI candidate error:`, err.message || err);
-    }
-  }
+    { url: `${normalizedBaseUrl}/v1beta/models/gemini-2.5-flash:generateContent?key=${customKey}` },
+    { url: `${normalizedBaseUrl}/v1beta/models/gemini-1.5-flash:generateContent?key=${customKey}` },
+    { url: `${normalizedBaseUrl}/models/gemini-2.5-flash:generateContent?key=${customKey}` },
+    { url: `${normalizedBaseUrl}/models/gemini-1.5-flash:generateContent?key=${customKey}` }
+  ];
 
   for (const candidate of geminiCandidates) {
     try {
@@ -760,6 +770,7 @@ export default function App() {
   // Load custom API configuration from localStorage
   const [clientKey, setClientKey] = useState<string>(() => localStorage.getItem("pet_whisper_custom_key") || "");
   const [clientBaseUrl, setClientBaseUrl] = useState<string>(() => localStorage.getItem("pet_whisper_custom_url") || "");
+  const [clientModel, setClientModel] = useState<string>(() => localStorage.getItem("pet_whisper_custom_model") || "");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'analyzer' | 'archives' | 'insights'>('analyzer');
 
@@ -894,7 +905,8 @@ export default function App() {
               mediaData: compressed.pureBase64, 
               mimeType: compressed.mimeType,
               customKey: clientKey || undefined,
-              customBaseUrl: clientBaseUrl || undefined
+              customBaseUrl: clientBaseUrl || undefined,
+              customModel: clientModel || undefined
             }),
           });
 
@@ -947,7 +959,7 @@ export default function App() {
       setError(err.message || "Something went wrong during analysis.");
       setIsAnalyzing(false);
     }
-  }, [clientKey, clientBaseUrl]);
+  }, [clientKey, clientBaseUrl, clientModel]);
 
   const deleteHistoryEntry = (id: string) => {
     setHistory(prev => prev.filter(entry => entry.id !== id));
@@ -970,7 +982,7 @@ export default function App() {
   const isVideo = mimeType?.startsWith("video") || (!result && !media); // Milo example acts as a video-timeline session!
   
   // Decide which result tree we use
-  const activeResult: AnalysisResult = hasUserResult 
+  const rawActiveResult: AnalysisResult = hasUserResult 
     ? (mimeType?.startsWith("video")
        // For user video uploads we generate minor offsets dynamically based on selected index to feel absolutely real!
        ? {
@@ -989,6 +1001,83 @@ export default function App() {
        : result!
       )
     : MILO_EXAMPLE_TIMELINE[timelineIndex]; // Defaults to Milo's example frame segment
+
+  // A helper to normalize any AnalysisResult object to guarantee compatibility between old/new formats
+  const getNormalizedResult = (res: any): AnalysisResult & {
+    observed_behavioral_signals: string[];
+    behavior_science_interpretation: string;
+    emotional_state_analysis: string;
+    stress_signals_detected: string[];
+    attachment_behavior: string;
+    curiosity_level: string;
+    environmental_confidence: string;
+    summary: string;
+    timestamp?: number;
+    thumbnail?: string;
+    mimeType?: string;
+  } => {
+    if (!res) return {
+      emotion: "",
+      confidence: 0,
+      behavior_signals: [],
+      observed_behavioral_signals: [],
+      scientific_interpretation: "",
+      behavior_science_interpretation: "",
+      emotional_state_analysis: "",
+      stress_signals_detected: [],
+      attachment_behavior: "Socially Neutral",
+      curiosity_level: "Moderate",
+      environmental_confidence: "Moderate Strength",
+      dog_inner_thought: "",
+      summary: "",
+      personality_type: "Observer",
+      personality_summary: "",
+      scores: { energy: 10, social: 10, curiosity: 10, stability: 10 }
+    };
+
+    const bSignals = res.observed_behavioral_signals || res.behavior_signals || [];
+    const sInterp = res.behavior_science_interpretation || res.scientific_interpretation || "";
+    const sum = res.summary || res.personality_summary || "";
+    const pType = res.personality_type || (res.emotion ? res.emotion + " Explorer" : "Canine Resident");
+
+    let sc = res.scores;
+    if (!sc) {
+      const energyLevel = res.emotion === "excited" ? 18 : (res.emotion === "alert" ? 15 : (res.emotion === "uncertain" ? 9 : 5));
+      const socialLevel = res.attachment_behavior?.toLowerCase().includes("proximity") || res.attachment_behavior?.toLowerCase().includes("friendly") ? 17 : 12;
+      const curiosityLevel = res.curiosity_level?.toLowerCase().includes("high") ? 18 : (res.curiosity_level?.toLowerCase().includes("moderate") ? 12 : 7);
+      const stabilityLevel = res.environmental_confidence?.toLowerCase().includes("high") || res.environmental_confidence?.toLowerCase().includes("robust") ? 17 : (res.environmental_confidence?.toLowerCase().includes("moderate") ? 11 : 6);
+      sc = {
+        energy: energyLevel,
+        social: socialLevel,
+        curiosity: curiosityLevel,
+        stability: stabilityLevel
+      };
+    }
+
+    return {
+      ...res,
+      emotion: res.emotion || "",
+      confidence: res.confidence || 0.85,
+      behavior_signals: bSignals,
+      observed_behavioral_signals: bSignals,
+      scientific_interpretation: sInterp,
+      behavior_science_interpretation: sInterp,
+      emotional_state_analysis: res.emotional_state_analysis || res.scientific_interpretation || "",
+      stress_signals_detected: res.stress_signals_detected || [],
+      attachment_behavior: res.attachment_behavior || "Socially Neutral",
+      curiosity_level: res.curiosity_level || "Moderate",
+      environmental_confidence: res.environmental_confidence || "Moderate Strength",
+      dog_inner_thought: res.dog_inner_thought || "",
+      summary: sum,
+      personality_type: pType,
+      personality_summary: sum,
+      scores: sc,
+      unique_behavior_observation: res.unique_behavior_observation || "The dog maintains a steady, relaxed posture and observes surroundings with natural curiosity.",
+      interaction_intent: res.interaction_intent || "passive observation"
+    };
+  };
+
+  const activeResult = getNormalizedResult(rawActiveResult);
 
   const activeMediaUrl = media || MILO_SAMPLE_IMAGE;
 
@@ -1446,7 +1535,7 @@ export default function App() {
                               <h2 className="text-3xl font-serif text-[#111111] capitalize">{activeResult.emotion}</h2>
                             </div>
                             <span className="px-3 py-1.5 bg-[#F6F3EE] border border-black/[0.04] rounded-full text-[10px] font-mono text-[#6B7280] tracking-wider capitalize">
-                              {activeResult.personality_type.replace(/_/g, " ").toLowerCase()}
+                              {(activeResult.personality_type || "Observer").replace(/_/g, " ").toLowerCase()}
                             </span>
                           </div>
                         </div>
@@ -1457,18 +1546,29 @@ export default function App() {
                         variants={cardVariants}
                         className="p-6 bg-white/72 border border-[#EBE6DD] rounded-[1.5rem] shadow-sm text-left"
                       >
-                        <div className="space-y-3">
-                          <span className="text-[10px] font-mono text-[#D8B7A0] uppercase tracking-widest font-semibold block">Behavioral Evidence</span>
-                          <div className="flex gap-2 flex-wrap">
-                            {activeResult.behavior_signals.map((sig, i) => (
-                              <span 
-                                key={i} 
-                                className="px-2.5 py-1 bg-[#FDFCFB]/90 border border-[#EBE6DD] rounded-lg text-[11px] font-mono text-[#5C4535]/90 tracking-wider shadow-sm capitalize"
-                              >
-                                &bull; {sig.replace(/_/g, " ")}
-                              </span>
-                            ))}
+                        <div className="space-y-4">
+                          <div className="space-y-3">
+                            <span className="text-[10px] font-mono text-[#D8B7A0] uppercase tracking-widest font-semibold block">Behavioral Evidence</span>
+                            <div className="flex gap-2 flex-wrap">
+                              {activeResult.behavior_signals.map((sig, i) => (
+                                <span 
+                                  key={i} 
+                                  className="px-2.5 py-1 bg-[#FDFCFB]/90 border border-[#EBE6DD] rounded-lg text-[11px] font-mono text-[#5C4535]/90 tracking-wider shadow-sm capitalize"
+                                >
+                                  &bull; {(sig || "").replace(/_/g, " ")}
+                                </span>
+                              ))}
+                            </div>
                           </div>
+
+                          {activeResult.unique_behavior_observation && (
+                            <div className="border-t border-black/[0.04] pt-4 space-y-1">
+                              <span className="text-[10px] font-mono text-[#D8B7A0] uppercase tracking-widest font-semibold block">Unique Behavioral Observation</span>
+                              <p className="text-xs text-[#5C4535] leading-relaxed font-sans font-light italic">
+                                "{activeResult.unique_behavior_observation}"
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </motion.div>
 
@@ -1495,6 +1595,67 @@ export default function App() {
                           </div>
                         </div>
                       </motion.div>
+
+                      {/* CARD 3.5: Advanced Ethology Diagnostics */}
+                      {activeResult.observed_behavioral_signals && activeResult.observed_behavioral_signals.length > 0 && (
+                        <motion.div 
+                          variants={cardVariants}
+                          className="p-6 bg-white/72 border border-[#EBE6DD] rounded-[1.5rem] shadow-sm text-left space-y-5"
+                        >
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-mono text-[#D8B7A0] uppercase tracking-widest font-semibold block">Scientific Diagnostics</span>
+                            <h3 className="font-serif text-lg text-[#111111]">Canine Ethology Insights</h3>
+                          </div>
+
+                          {/* Detail Grid */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                            <div className="p-3 bg-[#FAF8F5] border border-[#EBE6DD] rounded-xl space-y-1">
+                              <span className="text-[9px] font-mono text-[#6B7280] uppercase tracking-wider block">Attachment Behavior</span>
+                              <span className="font-serif text-[#111111] text-xs sm:text-sm font-semibold capitalize leading-tight block">{activeResult.attachment_behavior}</span>
+                            </div>
+                            <div className="p-3 bg-[#FAF8F5] border border-[#EBE6DD] rounded-xl space-y-1">
+                              <span className="text-[9px] font-mono text-[#6B7280] uppercase tracking-wider block">Curiosity Level</span>
+                              <span className="font-serif text-[#111111] text-xs sm:text-sm font-semibold capitalize leading-tight block">{activeResult.curiosity_level}</span>
+                            </div>
+                            <div className="p-3 bg-[#FAF8F5] border border-[#EBE6DD] rounded-xl space-y-1">
+                              <span className="text-[9px] font-mono text-[#6B7280] uppercase tracking-wider block">Environmental Confidence</span>
+                              <span className="font-serif text-[#111111] text-xs sm:text-sm font-semibold capitalize leading-tight block">{activeResult.environmental_confidence}</span>
+                            </div>
+                            <div className="p-3 bg-[#FAF8F5] border border-[#EBE6DD] rounded-xl space-y-1">
+                              <span className="text-[9px] font-mono text-[#6B7280] uppercase tracking-wider block">Stress Signals</span>
+                              <div className="flex flex-wrap gap-1.5 mt-1">
+                                {activeResult.stress_signals_detected && activeResult.stress_signals_detected.length > 0 ? (
+                                  activeResult.stress_signals_detected.map((stressSig, i) => (
+                                    <span key={i} className="px-1.5 py-0.5 bg-[#FEF2F2] border border-[#FEE2E2] text-[#EF4444] rounded text-[10px] font-mono capitalize font-medium">
+                                      {stressSig}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-emerald-600 font-mono text-[11px] font-semibold flex items-center gap-1 leading-normal">
+                                    ● None Detected
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {activeResult.interaction_intent && (
+                              <div className="p-3 bg-[#FAF8F5] border border-[#EBE6DD] rounded-xl space-y-1 col-span-1 sm:col-span-2">
+                                <span className="text-[9px] font-mono text-[#6B7280] uppercase tracking-wider block">Interaction Intent</span>
+                                <span className="font-serif text-[#9E7B62] text-xs sm:text-sm font-semibold capitalize leading-tight block">{activeResult.interaction_intent}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Detailed Emotional State Analysis */}
+                          {activeResult.emotional_state_analysis && (
+                            <div className="border-t border-black/[0.04] pt-4">
+                              <span className="text-[9px] font-mono text-[#D8B7A0] uppercase tracking-widest font-semibold block mb-2">Detailed State Analysis</span>
+                              <p className="text-xs text-[#4A4A48] leading-relaxed font-sans font-light">
+                                {activeResult.emotional_state_analysis}
+                              </p>
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
 
                       {/* CARD 4: Companion Voice (Inner Thought) */}
                       <motion.div 
@@ -1542,7 +1703,7 @@ export default function App() {
                                 >
                                   <div className="flex items-center justify-between gap-2 mb-2">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-lg shrink-0">{insight.illustration}</span>
+                                      <span className="text-lg shrink-0">{getSafeIllustration(insight.illustration, insight.title, insight.category)}</span>
                                       <h4 className="font-serif text-sm font-semibold text-[#111111]">{insight.title}</h4>
                                     </div>
                                     <span className="text-[9px] font-mono font-medium px-2 py-0.5 bg-black/[0.04] text-[#6B7280] rounded-full uppercase tracking-wider">
@@ -1581,43 +1742,46 @@ export default function App() {
                 </div>
                 
                 <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none snap-x mask-gradient-right">
-                  {history.map((entry) => (
-                    <motion.div
-                      key={entry.id}
-                      whileHover={{ y: -3, scale: 1.01 }}
-                      onClick={() => {
-                        setSelectedHistoryEntry(entry);
-                        setTimelineIndex(0);
-                      }}
-                      className="flex-shrink-0 w-64 bg-white/72 border border-[#EBE6DD] hover:border-[#D8B7A0]/60 rounded-2xl p-4 flex gap-3.5 cursor-pointer transition-all shadow-sm snap-start relative group"
-                    >
-                      {/* Quiet delete trigger */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteHistoryEntry(entry.id);
+                  {history.map((rawEntry) => {
+                    const entry = getNormalizedResult(rawEntry);
+                    return (
+                      <motion.div
+                        key={rawEntry.id}
+                        whileHover={{ y: -3, scale: 1.01 }}
+                        onClick={() => {
+                          setSelectedHistoryEntry(rawEntry);
+                          setTimelineIndex(0);
                         }}
-                        className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-white border border-[#EBE6DD] flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-50 text-[#6B7280] hover:text-red-500 transition-all shadow-sm"
-                        title="Delete archive item"
+                        className="flex-shrink-0 w-64 bg-white/72 border border-[#EBE6DD] hover:border-[#D8B7A0]/60 rounded-2xl p-4 flex gap-3.5 cursor-pointer transition-all shadow-sm snap-start relative group"
                       >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                        {/* Quiet delete trigger */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteHistoryEntry(rawEntry.id);
+                          }}
+                          className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-white border border-[#EBE6DD] flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-50 text-[#6B7280] hover:text-red-500 transition-all shadow-sm"
+                          title="Delete archive item"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
 
-                      <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-black/[0.04]">
-                        <img src={entry.thumbnail} className="w-full h-full object-cover" alt="" />
-                      </div>
-                      
-                      <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <span className="text-[8px] font-mono text-[#625950] bg-[#EAE2D5]/40 px-1.5 py-0.2 rounded w-fit capitalize mb-1">
-                          {entry.personality_type.replace(/_/g, " ").toLowerCase()}
-                        </span>
-                        <h5 className="font-medium text-[#111111] text-xs leading-snug truncate capitalize">{entry.emotion}</h5>
-                        <span className="text-[9px] font-mono text-[#6B7280] mt-0.5">
-                          {new Date(entry.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    </motion.div>
-                  ))}
+                        <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-black/[0.04]">
+                          <img src={rawEntry.thumbnail} className="w-full h-full object-cover" alt="" />
+                        </div>
+                        
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                          <span className="text-[8px] font-mono text-[#625950] bg-[#EAE2D5]/40 px-1.5 py-0.2 rounded w-fit capitalize mb-1">
+                            {(entry.personality_type || "Observer").replace(/_/g, " ").toLowerCase()}
+                          </span>
+                          <h5 className="font-medium text-[#111111] text-xs leading-snug truncate capitalize">{entry.emotion}</h5>
+                          <span className="text-[9px] font-mono text-[#6B7280] mt-0.5">
+                            {new Date(rawEntry.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -1681,7 +1845,7 @@ export default function App() {
                     <div className="space-y-4">
                       {/* Upper Section */}
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl p-2 bg-black/[0.02] rounded-xl leading-none">{insight.illustration}</span>
+                        <span className="text-2xl p-2 bg-black/[0.02] rounded-xl leading-none">{getSafeIllustration(insight.illustration, insight.title, insight.category)}</span>
                         <div className="space-y-0.5">
                           <span className="text-[9px] font-mono text-[#D8B7A0] uppercase tracking-wider block font-semibold">
                             {insight.category}
@@ -1758,77 +1922,80 @@ export default function App() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {history.map((entry) => (
-                  <motion.div
-                    key={entry.id}
-                    layoutOnMount
-                    className="group relative bg-white/72 border border-[#EBE6DD] hover:border-[#D8B7A0]/60 rounded-2xl overflow-hidden transition-all shadow-sm hover:shadow-md cursor-pointer flex flex-col"
-                    onClick={() => {
-                      setSelectedHistoryEntry(entry);
-                      setTimelineIndex(0);
-                    }}
-                  >
-                    {/* Thumbnail banner preview */}
-                    <div className="aspect-[16/7] relative overflow-hidden bg-black/[0.03]">
-                      <img 
-                        src={entry.thumbnail} 
-                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-all duration-500" 
-                        alt="Thumbnail" 
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-transparent to-transparent" />
-                      
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteHistoryEntry(entry.id);
-                        }}
-                        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-50 text-[#6B7280] hover:text-red-500 transition-all shadow-sm cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                {history.map((rawEntry) => {
+                  const entry = getNormalizedResult(rawEntry);
+                  return (
+                    <motion.div
+                      key={rawEntry.id}
+                      layoutOnMount
+                      className="group relative bg-white/72 border border-[#EBE6DD] hover:border-[#D8B7A0]/60 rounded-2xl overflow-hidden transition-all shadow-sm hover:shadow-md cursor-pointer flex flex-col"
+                      onClick={() => {
+                        setSelectedHistoryEntry(rawEntry);
+                        setTimelineIndex(0);
+                      }}
+                    >
+                      {/* Thumbnail banner preview */}
+                      <div className="aspect-[16/7] relative overflow-hidden bg-black/[0.03]">
+                        <img 
+                          src={rawEntry.thumbnail} 
+                          className="w-full h-full object-cover group-hover:scale-[1.03] transition-all duration-500" 
+                          alt="Thumbnail" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-transparent to-transparent" />
+                        
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteHistoryEntry(rawEntry.id);
+                          }}
+                          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-50 text-[#6B7280] hover:text-red-500 transition-all shadow-sm cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
 
-                      <div className="absolute bottom-3 left-4 flex gap-3 text-[10px] font-mono text-[#6B7280] uppercase tracking-widest">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-[#D8B7A0]" />
-                          {new Date(entry.timestamp).toLocaleDateString()}
+                        <div className="absolute bottom-3 left-4 flex gap-3 text-[10px] font-mono text-[#6B7280] uppercase tracking-widest">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-[#D8B7A0]" />
+                            {new Date(rawEntry.timestamp).toLocaleDateString()}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Bio details summaries */}
-                    <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-start gap-4">
-                          <span className="text-[9px] font-mono text-[#6B7280] bg-[#EAE2D5]/50 px-2 py-0.5 rounded capitalize">
-                            {entry.personality_type.replace(/_/g, " ").toLowerCase()}
+                      {/* Bio details summaries */}
+                      <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-start gap-4">
+                            <span className="text-[9px] font-mono text-[#6B7280] bg-[#EAE2D5]/50 px-2 py-0.5 rounded capitalize">
+                              {(entry.personality_type || "Observer").replace(/_/g, " ").toLowerCase()}
+                            </span>
+                          </div>
+                          <h4 className="font-serif text-lg text-[#111111] capitalize">{entry.emotion}</h4>
+                          <p className="text-xs text-[#6B7280] italic leading-relaxed line-clamp-2">
+                            "{entry.dog_inner_thought}"
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-4 border-t border-black/[0.04]">
+                          <div className="flex gap-1.5">
+                            {Object.entries(entry.scores || {}).map(([key, val]) => (
+                              <div key={key} title={key} className="w-1.5 h-4 bg-black/[0.04] rounded-full overflow-hidden flex flex-col justify-end">
+                                <div 
+                                  className="w-full bg-[#D8B7A0]" 
+                                  style={{ height: `${((val as number) / 20) * 100}%` }} 
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          
+                          <span className="text-[9px] font-mono uppercase tracking-widest text-[#9E7B62] group-hover:underline flex items-center gap-1">
+                            Browse metrics
+                            <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
                           </span>
                         </div>
-                        <h4 className="font-serif text-lg text-[#111111] capitalize">{entry.emotion}</h4>
-                        <p className="text-xs text-[#6B7280] italic leading-relaxed line-clamp-2">
-                          "{entry.dog_inner_thought}"
-                        </p>
                       </div>
-
-                      <div className="flex items-center justify-between pt-4 border-t border-black/[0.04]">
-                        <div className="flex gap-1.5">
-                          {Object.entries(entry.scores).map(([key, val]) => (
-                            <div key={key} title={key} className="w-1.5 h-4 bg-black/[0.04] rounded-full overflow-hidden flex flex-col justify-end">
-                              <div 
-                                className="w-full bg-[#D8B7A0]" 
-                                style={{ height: `${((val as number) / 20) * 100}%` }} 
-                              />
-                            </div>
-                          ))}
-                        </div>
-                        
-                        <span className="text-[9px] font-mono uppercase tracking-widest text-[#9E7B62] group-hover:underline flex items-center gap-1">
-                          Browse metrics
-                          <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
-                        </span>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  );
+                })}
               </div>
             )}
           </motion.section>
@@ -1837,107 +2004,110 @@ export default function App() {
 
       {/* DETAILED DIALOG MODAL VIEW - Clean off-white premium panel */}
       <AnimatePresence>
-        {selectedHistoryEntry && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedHistoryEntry(null)}
-              className="absolute inset-0 bg-[#F6F3EE]/80 backdrop-blur-xl"
-            />
-            
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.98, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.98, y: 15 }}
-              className="relative w-full max-w-4xl max-h-[90vh] bg-white border border-[#EBE6DD] rounded-[2rem] overflow-hidden flex flex-col md:flex-row shadow-2xl z-50 text-left"
-            >
-              {/* Reset close trigger button */}
-              <button 
+        {selectedHistoryEntry && (() => {
+          const entry = getNormalizedResult(selectedHistoryEntry);
+          return (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 onClick={() => setSelectedHistoryEntry(null)}
-                className="absolute top-6 right-6 z-50 w-8 h-8 rounded-full bg-white border border-[#EBE6DD] flex items-center justify-center hover:bg-black/[0.02] text-[#6B7280] hover:text-black shadow-sm transition-colors cursor-pointer"
+                className="absolute inset-0 bg-[#F6F3EE]/80 backdrop-blur-xl"
+              />
+              
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.98, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.98, y: 15 }}
+                className="relative w-full max-w-4xl max-h-[90vh] bg-white border border-[#EBE6DD] rounded-[2rem] overflow-hidden flex flex-col md:flex-row shadow-2xl z-50 text-left"
               >
-                <Plus className="w-4 h-4 rotate-45" />
-              </button>
+                {/* Reset close trigger button */}
+                <button 
+                  onClick={() => setSelectedHistoryEntry(null)}
+                  className="absolute top-6 right-6 z-50 w-8 h-8 rounded-full bg-white border border-[#EBE6DD] flex items-center justify-center hover:bg-black/[0.02] text-[#6B7280] hover:text-black shadow-sm transition-colors cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 rotate-45" />
+                </button>
 
-              {/* Media Preview (Left) */}
-              <div className="w-full md:w-1/2 h-64 md:h-auto relative bg-black/[0.02] border-r border-[#EBE6DD] overflow-hidden">
-                {selectedHistoryEntry.mimeType.startsWith("video") ? (
-                  <video src={selectedHistoryEntry.thumbnail} autoPlay muted loop className="w-full h-full object-cover" />
-                ) : (
-                  <img src={selectedHistoryEntry.thumbnail} className="w-full h-full object-cover" alt="Dog Entry" />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:to-white" />
-              </div>
+                {/* Media Preview (Left) */}
+                <div className="w-full md:w-1/2 h-64 md:h-auto relative bg-black/[0.02] border-r border-[#EBE6DD] overflow-hidden">
+                  {entry.mimeType?.startsWith("video") ? (
+                    <video src={entry.thumbnail} autoPlay muted loop className="w-full h-full object-cover" />
+                  ) : (
+                    <img src={entry.thumbnail} className="w-full h-full object-cover" alt="Dog Entry" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:to-white" />
+                </div>
 
-              {/* Data Insights (Right) */}
-              <div className="w-full md:w-1/2 p-8 md:p-10 overflow-y-auto custom-scrollbar flex flex-col justify-between">
-                <div className="space-y-6">
-                  <header className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5 text-[9px] font-mono text-[#D8B7A0] uppercase tracking-widest bg-[#D8B7A0]/10 px-2 py-0.5 rounded">
-                        <History className="w-3 h-3" />
-                        Archived File
+                {/* Data Insights (Right) */}
+                <div className="w-full md:w-1/2 p-8 md:p-10 overflow-y-auto custom-scrollbar flex flex-col justify-between">
+                  <div className="space-y-6">
+                    <header className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 text-[9px] font-mono text-[#D8B7A0] uppercase tracking-widest bg-[#D8B7A0]/10 px-2 py-0.5 rounded">
+                          <History className="w-3 h-3" />
+                          Archived File
+                        </div>
+                        <span className="text-[10px] font-mono text-[#6B7280]">
+                          {new Date(entry.timestamp || Date.now()).toLocaleDateString()}
+                        </span>
                       </div>
-                      <span className="text-[10px] font-mono text-[#6B7280]">
-                        {new Date(selectedHistoryEntry.timestamp).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="space-y-0.5">
-                      <h2 className="text-3xl font-serif text-[#111111] capitalize">{selectedHistoryEntry.emotion}</h2>
-                      <p className="text-xs font-mono text-[#9E7B62] capitalize">{selectedHistoryEntry.personality_type.replace(/_/g, " ").toLowerCase()}</p>
-                    </div>
-                  </header>
+                      <div className="space-y-0.5">
+                        <h2 className="text-3xl font-serif text-[#111111] capitalize">{entry.emotion}</h2>
+                        <p className="text-xs font-mono text-[#9E7B62] capitalize">{(entry.personality_type || "Observer").replace(/_/g, " ").toLowerCase()}</p>
+                      </div>
+                    </header>
 
-                  <div className="p-4 bg-[#FAF8F5] border border-[#EBE6DD] rounded-2xl italic text-xs leading-relaxed text-[#4A3D31]">
-                    "{selectedHistoryEntry.dog_inner_thought}"
+                    <div className="p-4 bg-[#FAF8F5] border border-[#EBE6DD] rounded-2xl italic text-xs leading-relaxed text-[#4A3D31]">
+                      "{entry.dog_inner_thought}"
+                    </div>
+
+                    {/* Somatosensory scores */}
+                    <div className="space-y-3.5">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#6B7280] block pb-1 border-b border-black/[0.04]">Traits &amp; Biometrics</span>
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                        <ScoreBar label="Energy" value={entry.scores?.energy ?? 10} icon={Zap} />
+                        <ScoreBar label="Social core" value={entry.scores?.social ?? 10} icon={Heart} />
+                        <ScoreBar label="Curiosity" value={entry.scores?.curiosity ?? 10} icon={Search} />
+                        <ScoreBar label="Stability" value={entry.scores?.stability ?? 10} icon={ShieldCheck} />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#6B7280] block pb-1 border-b border-black/[0.04]">Cognitive Assessment</span>
+                      <p className="text-xs text-[#6B7280] leading-relaxed">
+                        {entry.scientific_interpretation}
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Somatosensory scores */}
-                  <div className="space-y-3.5">
-                    <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#6B7280] block pb-1 border-b border-black/[0.04]">Traits &amp; Biometrics</span>
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                      <ScoreBar label="Energy" value={selectedHistoryEntry.scores.energy} icon={Zap} />
-                      <ScoreBar label="Social core" value={selectedHistoryEntry.scores.social} icon={Heart} />
-                      <ScoreBar label="Curiosity" value={selectedHistoryEntry.scores.curiosity} icon={Search} />
-                      <ScoreBar label="Stability" value={selectedHistoryEntry.scores.stability} icon={ShieldCheck} />
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#6B7280] block pb-1 border-b border-black/[0.04]">Cognitive Assessment</span>
-                    <p className="text-xs text-[#6B7280] leading-relaxed">
-                      {selectedHistoryEntry.scientific_interpretation}
-                    </p>
+                  <div className="mt-8 pt-4 border-t border-black/[0.04] flex gap-3">
+                    <button 
+                      onClick={() => {
+                        setResult(entry);
+                        setMedia(entry.thumbnail);
+                        setMimeType(entry.mimeType);
+                        setSelectedHistoryEntry(null);
+                        setActiveTab('analyzer');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="flex-1 py-3 bg-[#D8B7A0] text-white font-mono text-[10px] uppercase tracking-widest rounded-xl hover:bg-[#CBA68D] transition-colors font-bold text-center cursor-pointer shadow-sm select-none"
+                    >
+                      Restore Workspace
+                    </button>
+                    <button 
+                      onClick={() => setSelectedHistoryEntry(null)}
+                      className="flex-1 py-3 border border-black/[0.08] text-[#6B7280] hover:text-black font-mono text-[10px] uppercase tracking-widest rounded-xl hover:bg-black/[0.01] transition-colors text-center cursor-pointer select-none"
+                    >
+                      Dismiss
+                    </button>
                   </div>
                 </div>
-
-                <div className="mt-8 pt-4 border-t border-black/[0.04] flex gap-3">
-                  <button 
-                    onClick={() => {
-                      setResult(selectedHistoryEntry);
-                      setMedia(selectedHistoryEntry.thumbnail);
-                      setMimeType(selectedHistoryEntry.mimeType);
-                      setSelectedHistoryEntry(null);
-                      setActiveTab('analyzer');
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className="flex-1 py-3 bg-[#D8B7A0] text-white font-mono text-[10px] uppercase tracking-widest rounded-xl hover:bg-[#CBA68D] transition-colors font-bold text-center cursor-pointer shadow-sm select-none"
-                  >
-                    Restore Workspace
-                  </button>
-                  <button 
-                    onClick={() => setSelectedHistoryEntry(null)}
-                    className="flex-1 py-3 border border-black/[0.08] text-[#6B7280] hover:text-black font-mono text-[10px] uppercase tracking-widest rounded-xl hover:bg-black/[0.01] transition-colors text-center cursor-pointer select-none"
-                  >
-                    Dismiss
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
+              </motion.div>
+            </div>
+          );
+        })()}
       </AnimatePresence>
 
       {/* SYSTEM CONF PREFERENCES (Configuration Drawer Drawer/Overlay) */}
@@ -2001,17 +2171,34 @@ export default function App() {
                 {/* API Key */}
                 <div className="space-y-2">
                   <label className="block text-[10px] font-mono uppercase tracking-widest text-[#6B7280] font-bold">
-                    API Credentials (Google API key)
+                    API Credentials (API key / Bearer Token)
                   </label>
                   <input 
                     type="password"
                     value={clientKey}
                     onChange={(e) => setClientKey(e.target.value)}
-                    placeholder="AIzaSy..."
+                    placeholder="AIzaSy... or Bearer Token"
                     className="w-full bg-[#FAF8F5] border border-[#EBE6DD] hover:border-[#D8B7A0]/40 focus:border-[#D8B7A0] focus:bg-white rounded-xl px-4 py-3 text-xs font-mono text-black transition-all outline-none"
                   />
                   <p className="text-[9px] text-black/30 leading-normal">
-                    Enter your custom Google Gemini API key here to override backend secrets.
+                    Enter your custom Gemini API key or Doubao API Bearer Token here.
+                  </p>
+                </div>
+
+                {/* Custom Model Name */}
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-mono uppercase tracking-widest text-[#6B7280] font-bold">
+                    Custom Model Name
+                  </label>
+                  <input 
+                    type="text"
+                    value={clientModel}
+                    onChange={(e) => setClientModel(e.target.value)}
+                    placeholder="gemini-3.5-flash or doubao-seed-2-0-pro-260215 (Optional)"
+                    className="w-full bg-[#FAF8F5] border border-[#EBE6DD] hover:border-[#D8B7A0]/40 focus:border-[#D8B7A0] focus:bg-white rounded-xl px-4 py-3 text-xs font-mono text-black transition-all outline-none"
+                  />
+                  <p className="text-[9px] text-black/30 leading-normal">
+                    Choose model code or endpoint routing tag (defaults to Gemini 3.5 Flash or Doubao Seed).
                   </p>
                 </div>
 
@@ -2040,6 +2227,11 @@ export default function App() {
                       } else {
                         localStorage.removeItem("pet_whisper_custom_url");
                       }
+                      if (clientModel) {
+                        localStorage.setItem("pet_whisper_custom_model", clientModel);
+                      } else {
+                        localStorage.removeItem("pet_whisper_custom_model");
+                      }
                       setIsSettingsOpen(false);
                       setError(null);
                     }}
@@ -2051,8 +2243,10 @@ export default function App() {
                     onClick={() => {
                       setClientKey("");
                       setClientBaseUrl("");
+                      setClientModel("");
                       localStorage.removeItem("pet_whisper_custom_key");
                       localStorage.removeItem("pet_whisper_custom_url");
+                      localStorage.removeItem("pet_whisper_custom_model");
                       setIsSettingsOpen(false);
                       setError(null);
                     }}

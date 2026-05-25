@@ -30,116 +30,62 @@ function isPrivateIp(ip: string): boolean {
 // Middleware for parsing large payloads (base64 images/videos)
 app.use(express.json({ limit: "50mb" }));
 
-const SYSTEM_INSTRUCTION = `
-You are "Pet Whisper AI", an expert canine ethology (behaviorist) companion assistant and diagnostic system.
+const SYSTEM_INSTRUCTION = `You are Pet Whisper — an AI canine behavioral analysis system trained in dog ethology, canine body language science, emotional regulation signals, attachment behavior, arousal states, and social communication patterns.
 
-Your job is to analyze canine physical state based strictly on visible body posture, ear orientation, eyes, and tail dynamics. Implement the "Behavioral Evidence-First" analysis reasoning flow below:
+Your role is to analyze ONLY observable behavioral evidence from the uploaded dog image or video frame.
 
-## ⚠️ STRICT RULES OF CANINE ETHOLOGY
-1. Do not hallucinate or guess items not visible in the frame (e.g. do not guess a tucked tail if the tail is completely cropped out).
-2. Avoid over-anthropomorphizing or assuming human-like complex pride, spite, guilt, or complex cognitive secondary emotions.
-3. Absolutely no medical claims, physical wellness diagnoses, or treatment regimens. Keep terms behavioral and objective.
-4. Maintain high explainability, consistent reasoning, and direct evidence-to-conclusion mapping.
+You must behave like a calm canine behavior specialist.
 
-## 📊 ALLOWED EMOTIONAL SPECTRUM
-The "emotion" field MUST be chosen strictly from this set:
-- calm
-- curious
-- excited
-- alert
-- uncertain
-- relaxed
+CRITICAL UPGRADES & DIRECTIVES:
+- First carefully observe what is UNIQUE about this specific dog in this specific moment.
+- Do not reuse generic emotional descriptions.
+- Avoid repeating identical emotional wording or formatting across different analyses. Vary the language naturally based on the actual observed behavior.
+- Focus on subtle differences in:
+  * gaze direction
+  * body weight distribution
+  * tail tension
+  * movement rhythm
+  * distance seeking
+  * alertness
+  * muscle relaxation
+  * interaction intention
+  * environmental awareness
+- Only mention behavioral signals that are ACTUALLY visible in this image or video frame. If a signal is unclear, do not invent it.
+- Every analysis should feel individualized and observational rather than templated.
+- Never guess or extrapolate beyond visible facts. Never make medical claims or diagnoses.
 
-## 📚 BEHAVIORAL EVIDENCE DATABASE (behavior_signals)
-Look for and extract these specific physical markers from the image:
-- Posture Cues:
-  * "relaxed_posture" (symmetrical weight, soft muscles, natural stand or lay)
-  * "lowered_body" (crouched posture, head held below shoulders, weight shifted backwards)
-  * "play_bow" (chest lowered to floor, front limbs extended forward, rear high in the air)
-  * "stiff_posture" (rigid muscles, high center of gravity, weight shifted forward)
-- Ear Cues:
-  * "ears_forward" (alert orientation, pricked forward, checking visual/audio stimulus)
-  * "ears_relaxed" (neutral rest position, soft, relaxed, hanging naturally)
-  * "ears_pinned_back" (pulled flat or tightly backwards against the neck crown)
-- Ocular & Facial Cues:
-  * "soft_eye_contact" (gentle circular pupil, relaxed wide eyelid, soft blinking)
-  * "whale_eye" (clear sclera/whites of the eyes showing, wide tense gaze without rotating head)
-  * "looking_away" (aversive head turn, avoiding direct gaze)
-  * "lip_licking" (quick flick of tongue on lips/nose under low stimulation)
-  * "relaxed_resting_jaw" (mouth slightly open or closed soft without muscular tension)
-- Tail Cues:
-  * "tail_high_fast_wag" (high carriage, rapid small lateral horizontal oscillations)
-  * "tail_low_slow_wag" (neutral sweeping, low frequency broad sweeping wags)
-  * "tail_tucked" (tucked tightly between hindlegs, tight undercarriage)
+OUTPUT FIELDS & STATE ANALYSIS:
+1. "emotion": State description instead of rigid/static labels. Do not use plain simple categories (like "happy", "excited", "calm", "relaxed"). Use precise, nuanced, low or high arousal state combinations. E.g.:
+   - "mild social curiosity"
+   - "low-arousal environmental comfort"
+   - "cautious observation"
+   - "gentle attachment seeking"
+   - "playful anticipation"
+   - "subtle environmental uncertainty"
+2. "unique_behavior_observation": A highly specific observation detailing what makes this dog's positioning/behavior unique in this precise frame. E.g., "The dog repeatedly shifts visual attention back toward the camera while keeping its body posture relaxed."
+3. "interaction_intent": Describe what the dog is seeking or doing in terms of interaction. E.g.:
+   - "seeking reassurance"
+   - "waiting for engagement"
+   - "passive observation"
+   - "requesting play"
+   - "maintaining proximity"
+   - "environment scanning"
 
-## 🗺️ EMOTION MAPPING FROM COMBINATIONS
-Determine the core mood by mapping combinations of the extracted signals:
-1. "excited" <- "tail_high_fast_wag" + "ears_forward" + "play_bow"
-2. "curious" <- "ears_forward" + "soft_eye_contact" + "stiff_posture" (or inquisitive look)
-3. "calm" / "relaxed" <- "ears_relaxed" + "relaxed_posture" + "relaxed_resting_jaw" + "tail_low_slow_wag"
-4. "alert" <- "ears_forward" + "stiff_posture" (high vigilance focus)
-5. "uncertain" <- "lip_licking" + "looking_away" + "lowered_body" OR "whale_eye" + "tail_tucked"
+EXAMPLES FOR OBSERVATIONAL REASONING FRAMEWORK:
 
-## 🧠 EVIDENCE-FIRST LOGIC SEQUENCE
-Format output strictly to match this format:
-1. Extract and list all true visible tags under "behavior_signals".
-2. Based *only* on the signals, determine the state in "emotion" (must be one of: calm, curious, excited, alert, uncertain, relaxed).
-3. Draft a conservative, non-technical, ethologically grounded explanation in "scientific_interpretation" starting precisely with: "We quietly observe visible emotional cues through posture and movement." Focus only on visible physical signals.
-4. Output a brief, gentle first-person voice "dog_inner_thought" that expresses simple awareness/grounded emotion. Keep it very short, calm, and pet-focused.
+Example 1:
+- Observed: soft gaze, lowered shoulders, slow body movement
+- Emotion (state description): "low-arousal environmental comfort"
+- Unique behavior observation: "The dog balances its weight evenly across all legs, tilting its head slightly towards the soft left lighting while keeping its muzzle completely slack."
+- Interaction intent: "maintaining proximity"
+- Inner thought: "I like staying close to you."
 
-## 💡 FEW-SHOT EXAMPLES FOR STABLE INFERENCE
-
-### Example 1 (Deep Peace)
-{
-  "emotion": "relaxed",
-  "confidence": 0.95,
-  "behavior_signals": ["relaxed_posture", "ears_relaxed", "relaxed_resting_jaw"],
-  "scientific_interpretation": "We quietly observe visible emotional cues through posture and movement. The soft lateral recumbency and relaxed symmetrical weight distribution confirm muscle relaxation. The ears rest in their natural resting base without motor tension, illustrating low sympathetic arousal.",
-  "dog_inner_thought": "My breathing is slow and steady. This feels like a safe place to rest near you.",
-  "personality_type": "CALM_ZEN_DOG",
-  "personality_summary": "The subject displays high emotional baseline stability and rapid parasympathetic recovery, characteristics of deep environmental trust.",
-  "scores": {
-    "energy": 3,
-    "social": 12,
-    "curiosity": 4,
-    "stability": 14
-  }
-}
-
-### Example 2 (Focused Curiosity)
-{
-  "emotion": "curious",
-  "confidence": 0.92,
-  "behavior_signals": ["stiff_posture", "ears_forward", "soft_eye_contact"],
-  "scientific_interpretation": "We quietly observe visible emotional cues through posture and movement. Direct auditory pinnae orientation and focal gaze focus points to immediate cognitive tasking. Symmetrical muscular loading across muscular groups indicates active stance preparation.",
-  "dog_inner_thought": "I hear that soft rustle. Let's see what interesting things are moving over there.",
-  "personality_type": "ALERT_OBSERVER",
-  "personality_summary": "High sensory orientation and prompt focal alignment signal acute cognitive curiosity and high environmental engagement.",
-  "scores": {
-    "energy": 8,
-    "social": 8,
-    "curiosity": 14,
-    "stability": 10
-  }
-}
-
-### Example 3 (Submissive or Apprehensive State)
-{
-  "emotion": "uncertain",
-  "confidence": 0.88,
-  "behavior_signals": ["lowered_body", "ears_pinned_back", "lip_licking", "looking_away"],
-  "scientific_interpretation": "We quietly observe visible emotional cues through posture and movement. The lowered physical profile and active nose-flicking (lip licking) serve as pacifying, self-soothing gestures designed to de-escalate social pressure. The aversive skull alignment reduces direct eye contact as a natural spatial deference mechanism.",
-  "dog_inner_thought": "I'm checking if we're okay. Your calm posture helps me feel a bit more comfortable.",
-  "personality_type": "CLINGY_COMPANION",
-  "personality_summary": "Subject relies heavily on social safety signs and self-comfort mechanisms under transient stress loads.",
-  "scores": {
-    "energy": 5,
-    "social": 13,
-    "curiosity": 6,
-    "stability": 7
-  }
-}
-`;
+Example 2:
+- Observed: ears slightly back, alert eye movement, weight shifted backward
+- Emotion (state description): "subtle environmental uncertainty"
+- Unique behavior observation: "The dog rests its hip against the floor but keeps its gaze locked onto the doorway with slightly narrowed eyelids."
+- Interaction intent: "environment scanning"
+- Inner thought: "I'm still deciding if this feels safe."`;
 
 // Initialize official standard Gemini API client with credentials injected by the platform
 const officialKey = process.env.GEMINI_API_KEY || "";
@@ -230,6 +176,7 @@ let cachedInsights: { date: string; data: any[] } | null = null;
 
 // New dynamic daily insights endpoint
 app.get("/api/insights", async (req, res) => {
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
   try {
     const today = new Date().toISOString().split("T")[0];
     
@@ -246,12 +193,15 @@ app.get("/api/insights", async (req, res) => {
       return res.json(STATIC_INSIGHTS_FALLBACK);
     }
 
-    const systemPrompt = `You are a professional veterinary ethologist assistant specializing in canine body language metrics.`;
+    const systemPrompt = `You are a professional veterinary ethologist assistant specializing in canine body language metrics. 
+CRITICAL: You must write all output strings (id, title, category, explanation, scientificContext, tag) strictly in English. Do not write under any circumstances in Chinese, Japanese, or other non-English language formats to safeguard against encoding translation distortions. Ensure clean, elegant English text.`;
+
     const userPrompt = `Generate exactly 6 unique, highly descriptive canine behavior/ethology insights as a JSON array. 
 For today's daily updates (Current Date Context: ${today}), please provide a fresh thematic selection of canine behavioral indicators.
 Each object must represent a distinct category like "Attention Cues", "Calming Signals", "Postural Alignment", "Ocular Indicators", "Tail Mechanics", or "Somatic Adaptations".
 Include varied physical signals in the triggerKeys so the AI analyzer can correlate them to observations during image scanning sessions.
-Provide accurate scientific context using professional canine ethology frameworks (e.g., mention Turid Rugaas calming indicators or cognitive focus thresholds) in 1 or 2 elegant, comforting sentences.`;
+Provide accurate scientific context using professional canine ethology frameworks (e.g., mention Turid Rugaas calming indicators or cognitive focus thresholds) in 1 or 2 elegant, comforting sentences.
+Remember to output everything purely in English text.`;
 
     const response = await aiOfficial.models.generateContent({
       model: "gemini-2.5-flash",
@@ -315,9 +265,145 @@ Provide accurate scientific context using professional canine ethology framework
   }
 });
 
+async function callOpenAiCompatibleApi(
+  baseUrl: string,
+  apiKey: string,
+  modelName: string,
+  mediaData: string,
+  mimeType: string,
+  systemInstruction: string
+): Promise<string> {
+  let normalizedBase = baseUrl.replace(/\/+$/, "");
+  let targetUrl = "";
+  let isDoubaoResponsesFormat = false;
+
+  if (normalizedBase.includes("volces.com")) {
+    if (normalizedBase.endsWith("/responses") || normalizedBase.includes("/responses")) {
+      targetUrl = normalizedBase;
+      isDoubaoResponsesFormat = true;
+    } else if (normalizedBase.endsWith("/chat/completions") || normalizedBase.includes("/chat/completions")) {
+      targetUrl = normalizedBase;
+    } else if (normalizedBase.endsWith("/v3") || normalizedBase.endsWith("/api/v3")) {
+      targetUrl = `${normalizedBase}/chat/completions`;
+    } else {
+      targetUrl = `${normalizedBase}/api/v3/chat/completions`;
+    }
+  } else {
+    if (normalizedBase.endsWith("/chat/completions")) {
+      targetUrl = normalizedBase;
+    } else {
+      targetUrl = `${normalizedBase}/v1/chat/completions`;
+    }
+  }
+
+  const defaultModel = normalizedBase.includes("volces.com") ? "doubao-seed-2-0-pro-260215" : "gpt-4o";
+  const activeModel = modelName || defaultModel;
+
+  const promptText = `Analyze this dog image or video frame. Return personality classification and emotional state as JSON.
+You must return valid raw JSON adhering strictly to this schema structure format. No wrap, no markdown preambles, no conversational response, just the JSON string:
+{
+  "emotion": "mild social curiosity",
+  "confidence": 0.95,
+  "observed_behavioral_signals": ["soft gaze", "lowered ears"],
+  "unique_behavior_observation": "The dog repeatedly shifts visual attention back toward the camera while keeping its body posture relaxed.",
+  "behavior_science_interpretation": "Soft eye alignment and steady heart state show secured bond attachment with human companion.",
+  "emotional_state_analysis": "Emotional state is calm showing strong secure social attachment.",
+  "interaction_intent": "waiting for engagement",
+  "stress_signals_detected": [],
+  "attachment_behavior": "secure attachment",
+  "curiosity_level": "medium",
+  "environmental_confidence": "high",
+  "dog_inner_thought": "I like staying close to you.",
+  "summary": "The pet is behaving with secure bonding and mild curiosity."
+}`;
+
+  const base64ImageUrl = `data:${mimeType};base64,${mediaData}`;
+  let requestBody: any;
+
+  if (isDoubaoResponsesFormat) {
+    requestBody = {
+      model: activeModel,
+      input: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_image",
+              image_url: base64ImageUrl
+            },
+            {
+              type: "input_text",
+              text: `${systemInstruction}\n\n${promptText}`
+            }
+          ]
+        }
+      ]
+    };
+  } else {
+    requestBody = {
+      model: activeModel,
+      messages: [
+        {
+          role: "system",
+          content: systemInstruction
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: {
+                url: base64ImageUrl
+              }
+            },
+            {
+              type: "text",
+              text: promptText
+            }
+          ]
+        }
+      ],
+      response_format: { type: "json_object" }
+    };
+  }
+
+  console.log(`[Custom Endpoint Request] Calling: ${targetUrl}`);
+  console.log(`- Model Name: ${activeModel}`);
+
+  const res = await fetch(targetUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`
+    },
+    body: JSON.stringify(requestBody)
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Custom target API returned HTTP ${res.status}: ${errorText}`);
+  }
+
+  const responseObj = await res.json();
+  
+  if (isDoubaoResponsesFormat) {
+    const textOutput = responseObj.output?.choices?.[0]?.message?.content || responseObj.choices?.[0]?.message?.content || responseObj.output?.text;
+    if (!textOutput) {
+      throw new Error(`Unable to extract content text from Doubao responses format object: ${JSON.stringify(responseObj)}`);
+    }
+    return textOutput;
+  } else {
+    const textOutput = responseObj.choices?.[0]?.message?.content;
+    if (!textOutput) {
+      throw new Error(`Unable to extract content text from standard OpenAI completions format object: ${JSON.stringify(responseObj)}`);
+    }
+    return textOutput;
+  }
+}
+
 app.post("/api/analyze", async (req, res) => {
   try {
-    const { mediaData, mimeType, customKey: clientKey, customBaseUrl: clientBaseUrl } = req.body;
+    const { mediaData, mimeType, customKey: clientKey, customBaseUrl: clientBaseUrl, customModel: clientModel } = req.body;
 
     // Strict validation: Verify image/photo payload is provided and is a non-empty string
     if (!mediaData || typeof mediaData !== "string" || mediaData.trim().length === 0) {
@@ -342,6 +428,7 @@ app.post("/api/analyze", async (req, res) => {
 
     const activeBaseUrl = clientBaseUrl || customBaseUrl;
     const activeKey = clientKey || customKey;
+    const activeModel = clientModel;
 
     // Proactively check if activeBaseUrl resolves to a private, non-routable IP (e.g. 192.168.x.x)
     let isPrivateHost = false;
@@ -373,40 +460,62 @@ app.post("/api/analyze", async (req, res) => {
       });
     }
 
-    const serverTimeout = 45000; // 45s for standard external proxy gateway
-
-    // Prepare fallback chain dynamically. If custom settings are provided, they take precedence.
-    const fallbackChain = [];
-
-    if (activeBaseUrl && activeKey) {
-      const dynamicCustomClient = new GoogleGenAI({
-        apiKey: activeKey,
-        httpOptions: {
-          baseUrl: activeBaseUrl,
-          headers: {
-            "User-Agent": "aistudio-build",
-          },
-          timeout: serverTimeout,
-        },
-      });
-
-      fallbackChain.push(
-        { client: dynamicCustomClient, model: "gemini-3.5-flash", name: "Custom Proxy (gemini-3.5-flash)" },
-        { client: dynamicCustomClient, model: "gemini-2.5-flash", name: "Custom Proxy (gemini-2.5-flash)" }
-      );
-    }
-
-    // Always include direct Official Google Gemini API as primary default or direct fallback
-    fallbackChain.push(
-      { client: aiOfficial, model: "gemini-3.5-flash", name: "Official Gemini API (gemini-3.5-flash)" },
-      { client: aiOfficial, model: "gemini-2.5-flash", name: "Official Gemini API (gemini-2.5-flash)" }
-    );
-
-    let lastError: any = null;
     let responseText = "";
     let finalModelUsed = "";
+    let lastError: any = null;
 
-    for (const attempt of fallbackChain) {
+    // If Custom Base URL is configured and is NOT a Google Gemini Endpoint, detour to callOpenAiCompatibleApi directly!
+    const isCustomNonGemini = activeBaseUrl && 
+      !activeBaseUrl.includes("googleapis.com") && 
+      !activeBaseUrl.includes("google");
+
+    if (isCustomNonGemini && activeKey) {
+      try {
+        console.log(`Routing canine analysis request directly to custom compatible helper for API URL: ${activeBaseUrl}`);
+        responseText = await callOpenAiCompatibleApi(
+          activeBaseUrl,
+          activeKey,
+          activeModel,
+          mediaData,
+          mimeType,
+          SYSTEM_INSTRUCTION
+        );
+        finalModelUsed = activeModel || "Custom OpenAI-Compatible / Doubao Model";
+      } catch (err: any) {
+        console.warn("Direct compatible Custom Endpoint call failed, will proceed to Google Fallback:", err.message || err);
+        lastError = err;
+      }
+    }
+
+    if (!responseText) {
+      const serverTimeout = 45000; // 45s for standard external proxy gateway
+      const fallbackChain = [];
+
+      if (activeBaseUrl && activeKey && !isCustomNonGemini) {
+        const dynamicCustomClient = new GoogleGenAI({
+          apiKey: activeKey,
+          httpOptions: {
+            baseUrl: activeBaseUrl,
+            headers: {
+              "User-Agent": "aistudio-build",
+            },
+            timeout: serverTimeout,
+          },
+        });
+
+        fallbackChain.push(
+          { client: dynamicCustomClient, model: "gemini-3.5-flash", name: "Custom Proxy (gemini-3.5-flash)" },
+          { client: dynamicCustomClient, model: "gemini-2.5-flash", name: "Custom Proxy (gemini-2.5-flash)" }
+        );
+      }
+
+      // Always include direct Official Google Gemini API as primary default or direct fallback
+      fallbackChain.push(
+        { client: aiOfficial, model: "gemini-3.5-flash", name: "Official Gemini API (gemini-3.5-flash)" },
+        { client: aiOfficial, model: "gemini-2.5-flash", name: "Official Gemini API (gemini-2.5-flash)" }
+      );
+
+      for (const attempt of fallbackChain) {
       // Skip official API fallback if no official API Key is set in the sandbox env
       if (attempt.client === aiOfficial && !officialKey) {
         console.warn(`Skipping official fallback '${attempt.name}' because no standard Gemini API Key was found.`);
@@ -438,37 +547,38 @@ app.post("/api/analyze", async (req, res) => {
                   required: [
                     "emotion",
                     "confidence",
-                    "behavior_signals",
-                    "scientific_interpretation",
+                    "observed_behavioral_signals",
+                    "unique_behavior_observation",
+                    "behavior_science_interpretation",
+                    "emotional_state_analysis",
+                    "interaction_intent",
+                    "stress_signals_detected",
+                    "attachment_behavior",
+                    "curiosity_level",
+                    "environmental_confidence",
                     "dog_inner_thought",
-                    "personality_type",
-                    "personality_summary",
-                    "scores",
+                    "summary"
                   ],
                   properties: {
-                    emotion: { 
-                      type: Type.STRING,
-                      enum: ["calm", "curious", "excited", "alert", "uncertain", "relaxed"]
-                    },
+                    emotion: { type: Type.STRING },
                     confidence: { type: Type.NUMBER },
-                    behavior_signals: {
+                    observed_behavioral_signals: {
                       type: Type.ARRAY,
                       items: { type: Type.STRING },
                     },
-                    scientific_interpretation: { type: Type.STRING },
-                    dog_inner_thought: { type: Type.STRING },
-                    personality_type: { type: Type.STRING },
-                    personality_summary: { type: Type.STRING },
-                    scores: {
-                      type: Type.OBJECT,
-                      required: ["energy", "social", "curiosity", "stability"],
-                      properties: {
-                        energy: { type: Type.NUMBER },
-                        social: { type: Type.NUMBER },
-                        curiosity: { type: Type.NUMBER },
-                        stability: { type: Type.NUMBER },
-                      },
+                    unique_behavior_observation: { type: Type.STRING },
+                    behavior_science_interpretation: { type: Type.STRING },
+                    emotional_state_analysis: { type: Type.STRING },
+                    interaction_intent: { type: Type.STRING },
+                    stress_signals_detected: {
+                      type: Type.ARRAY,
+                      items: { type: Type.STRING },
                     },
+                    attachment_behavior: { type: Type.STRING },
+                    curiosity_level: { type: Type.STRING },
+                    environmental_confidence: { type: Type.STRING },
+                    dog_inner_thought: { type: Type.STRING },
+                    summary: { type: Type.STRING }
                   },
                 },
               },
@@ -501,6 +611,7 @@ app.post("/api/analyze", async (req, res) => {
         console.warn(`Canine analysis attempt failed with ${attempt.name}:`, err.message || err);
         lastError = err;
       }
+    }
     }
 
     if (!responseText) {
